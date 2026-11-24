@@ -39,8 +39,10 @@ function clampPlacement(item, x, z, angle) {
 
 function makeViewer() {
   const scene = new THREE.Scene();
+  const stage = $('stage');
+  const mobile = matchMedia('(pointer: coarse)').matches;
   const elementary = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-  elementary.setPixelRatio(Math.min(window.devicePixelRatio, 1.65));
+  elementary.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.35 : 1.65));
   elementary.shadowMap.enabled = true;
   elementary.shadowMap.type = THREE.PCFSoftShadowMap;
   elementary.shadowMap.autoUpdate = false;
@@ -58,14 +60,15 @@ function makeViewer() {
   controls.minZoom = 0.53;
   controls.maxZoom = 4.8;
 
-  const model = buildModel();
+  let model = buildModel();
   scene.add(model.root);
   const lighting = new THREE.HemisphereLight(0xfaf3e5, 0x9c9b86, 1.95);
   const sun = new THREE.DirectionalLight(0xffe9cc, 2.32);
   sun.position.set(-10, 24, 16);
   sun.target.position.set(4.7, 2, 2.6);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = mobile ? 1536 : 2048;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 18, bottom: -18, near: 0.2, far: 66 });
   sun.shadow.camera.updateProjectionMatrix();
   sun.shadow.normalBias = 0.021;
@@ -103,6 +106,7 @@ function makeViewer() {
   let width = 1, height = 1, dirty = true, frameId = 0, gesture, labels = [], points = [], transition;
   let shelf = { ground: 0, upper: 3.3, roof: 0 };
   let showingStage = false;
+  let pendingAsset;
 
   for (const item of furnishings) {
     const option = new Option(`${floors[item.floor].tag} · ${item.room} · ${item.name}`, item.id);
@@ -115,7 +119,8 @@ function makeViewer() {
   function place(item) {
     const value = saved.get(item.id) ?? item;
     const node = model.furniture.get(item.id);
-    node.position.set(value.x, 0.018, value.z);
+    node.position.x = value.x;
+    node.position.z = value.z;
     node.rotation.y = value.angle * Math.PI / 180;
     return value;
   }
@@ -137,6 +142,7 @@ function makeViewer() {
 
   function draw(now) {
     frameId = 0;
+    if (pendingAsset && !gesture) applyAsset();
     if (transition) {
       const fraction = Math.min(1, (now - transition.start) / 410);
       const t = 1 - (1 - fraction) ** 3;
@@ -154,7 +160,7 @@ function makeViewer() {
       dirty = false;
       if (!showingStage) {
         showingStage = true;
-        $('stage').dataset.ready = 'true';
+        stage.dataset.ready = 'true';
       }
     }
     if ((moved || transition) && !frameId) frameId = requestAnimationFrame(draw);
@@ -221,6 +227,7 @@ function makeViewer() {
     const explode = state.mode === 'exploded';
     controls.enableRotate = !plan;
     controls.mouseButtons.LEFT = plan ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
+    controls.touches.ONE = plan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
     const center = solo && state.floor !== 'yard'
       ? [5.55, state.floor === 'roof' ? 5.95 : floors[state.floor].elevation + 0.16, 4.53]
       : [4.89, explode ? 4.34 + (state.spacing - 2.6) * 0.42 : solo ? -0.12 : 1.65, 2.69];
@@ -248,6 +255,87 @@ function makeViewer() {
     status();
   }
 
+  function applyAsset() {
+    const fallback = model;
+    model = pendingAsset.model;
+    scene.environment = pendingAsset.environment;
+    scene.environmentIntensity = 0.71;
+    pendingAsset = undefined;
+
+    elementary.toneMappingExposure = 1.13;
+    elementary.shadowMap.type = THREE.PCFShadowMap;
+    sun.color.set(0xfff5e8);
+    sun.intensity = 3.05;
+    sun.position.set(-7.4, 20, 23);
+    sun.shadow.radius = mobile ? 2.3 : 3.25;
+    sun.shadow.normalBias = 0.018;
+    lighting.intensity = 0.32;
+    contact.material.opacity = 0.24;
+
+    for (const id of ['ground', 'upper']) {
+      model.building[id].layer.position.y = fallback.building[id].layer.position.y;
+    }
+    model.roof.position.y = fallback.roof.position.y;
+    fallback.root.removeFromParent();
+    const geometries = new Set();
+    const materials = new Set();
+    fallback.root.traverse(object => {
+      if (object.geometry?.isBufferGeometry) geometries.add(object.geometry);
+      if (object.material) {
+        for (const material of [object.material].flat()) {
+          if (material?.isMaterial) materials.add(material);
+        }
+      }
+    });
+    geometries.forEach(geometry => geometry.dispose());
+    materials.forEach(material => material.dispose());
+
+    furnishings.forEach(place);
+    scene.add(model.root);
+    stage.dataset.model = 'photo';
+    $('model-note').textContent = '写实模型已加载';
+    $('model-note').classList.add('visually-hidden');
+    updateModelVisibility();
+    updateLabels();
+    dirty = true;
+    elementary.shadowMap.needsUpdate = true;
+  }
+
+  async function upgradeModel() {
+    try {
+      const { loadAssetModel, makeDaylightEnvironment } = await import('./asset-model.js');
+      const asset = await loadAssetModel();
+      pendingAsset = { model: asset, environment: makeDaylightEnvironment() };
+      renderSoon();
+    } catch (error) {
+      console.warn('Villa model could not load.', error);
+      stage.dataset.model = 'schematic';
+      $('model-note').textContent = '写实模型暂不可用，当前为示意模型。';
+    }
+  }
+
+  function updateModelVisibility() {
+    const solo = state.mode === 'cut' || state.mode === 'plan';
+    const exploded = state.mode === 'exploded';
+    model.site.visible = !solo || state.floor === 'yard';
+    model.roof.visible = !solo || state.floor === 'roof';
+    model.roof.traverse(object => {
+      if (object.isMesh) object.castShadow = !exploded && (object.userData.castShadow ?? true);
+    });
+    contact.visible = state.mode !== 'plan';
+    const detailed = stage.dataset.model === 'photo';
+    grid.visible = !detailed || state.mode === 'plan';
+    if (detailed) sun.shadow.intensity = state.mode === 'plan' ? 0.36 : 0.89;
+    model.proposal.visible = state.phase === 'proposal';
+    model.present.visible = state.phase === 'present';
+    for (const [id, layer] of Object.entries(model.building)) {
+      layer.layer.visible = !solo || id === state.floor;
+      layer.cut.visible = solo || exploded;
+      layer.full.visible = !layer.cut.visible;
+      layer.contents.visible = state.furniture;
+    }
+  }
+
   function show({ reset = false, animate = false } = {}) {
     const solo = state.mode === 'cut' || state.mode === 'plan';
     const exploded = state.mode === 'exploded';
@@ -264,18 +352,7 @@ function makeViewer() {
       model.building.upper.layer.position.y = shelf.upper;
       model.roof.position.y = shelf.roof;
     }
-    model.site.visible = !solo || state.floor === 'yard';
-    model.roof.visible = !solo || state.floor === 'roof';
-    model.roof.traverse(object => { if (object.isMesh) object.castShadow = !exploded; });
-    contact.visible = state.mode !== 'plan';
-    model.proposal.visible = state.phase === 'proposal';
-    model.present.visible = state.phase === 'present';
-    for (const [id, layer] of Object.entries(model.building)) {
-      layer.layer.visible = !solo || id === state.floor;
-      layer.cut.visible = solo || exploded;
-      layer.full.visible = !layer.cut.visible;
-      layer.contents.visible = state.furniture;
-    }
+    updateModelVisibility();
     modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === state.mode)));
     floorButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.floor === state.floor)));
     $('measure').setAttribute('aria-pressed', String(state.measuring));
@@ -283,7 +360,10 @@ function makeViewer() {
     $('furniture-visibility').checked = state.furniture;
     $('spacing-field').hidden = !exploded;
     $('spacing-value').value = `${state.spacing.toFixed(1)} m`;
-    $('view-hint').textContent = state.measuring ? '点选两个位置，测量水平距离' : state.mode === 'plan' ? '拖动平移 · 滚动或双指缩放' : '拖动旋转 · 滚动缩放 · 右键拖动平移';
+    const orbitHint = mobile ? '单指拖动旋转 · 双指缩放或平移' : '拖动旋转 · 滚动缩放 · 右键拖动平移';
+    const planHint = mobile ? '单指拖动平移 · 双指缩放' : '拖动平移 · 滚动或双指缩放';
+    const gestureHint = state.mode === 'plan' ? planHint : orbitHint;
+    $('view-hint').textContent = state.measuring ? '点选两个位置，测量水平距离' : gestureHint;
     const floor = floors[state.floor];
     $('floor-elevation').textContent = state.floor === 'ground' ? '±0.000' : state.floor === 'upper' ? '+3.300' : state.floor === 'roof' ? '照片估算' : '室外';
     $('scene-index').textContent = solo ? floor?.tag ?? (state.floor === 'roof' ? '屋面' : '室外') : exploded ? '逐层展开' : '整栋';
@@ -408,6 +488,7 @@ function makeViewer() {
     gesture = undefined;
     controls.enabled = true;
     $('stage').classList.remove('dragging');
+    if (pendingAsset) renderSoon();
   }
 
   canvas.addEventListener('pointerup', endGesture);
@@ -483,12 +564,14 @@ function makeViewer() {
   });
   canvas.addEventListener('webglcontextrestored', () => { status(); renderSoon(true); });
   show({ reset: true });
+  upgradeModel();
 }
 
 try {
   makeViewer();
 } catch (error) {
   console.error(error);
+  $('model-note').hidden = true;
   $('view-error').textContent = '三维模型暂时无法打开。请启用浏览器的 WebGL 2 和硬件加速，再刷新页面。';
   $('view-error').hidden = false;
   document.querySelectorAll('.workbench button, .workbench input, .workbench select').forEach(control => { control.disabled = true; });

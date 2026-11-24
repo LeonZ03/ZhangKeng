@@ -53,6 +53,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 .view-caption { pointer-events: none; position: absolute; left: 19px; top: 17px; }
 .scene-index { display: inline-block; background: #fdfaf1df; border: 1px solid #d8d5c9; border-radius: 5px; font-size: 11px; font-weight: 650; padding: 4px 8px; color: #494d3e; }
 .view-caption p { font: 600 clamp(16px, 1.6vw, 22px)/1.45 var(--serif); margin-top: 6px; }
+.model-note { display: block; margin-top: 5px; color: var(--soft); font-size: 12px; line-height: 1.5; }
 .compass { pointer-events: none; position: absolute; right: 17px; top: 17px; display: grid; align-content: center; place-items: center; gap: 3px; border: 1px solid #d5d3c7; width: 43px; height: 55px; background: #fcfaf1df; border-radius: 24px; color: #444b3b; font-size: 11px; font-weight: 700; }
 .compass i { display: block; background: var(--accent); height: 18px; width: 17px; clip-path: polygon(50% 0, 96% 97%, 50% 71%, 4% 97%); }
 .camera-controls { position: absolute; bottom: 15px; right: 15px; display: flex; gap: 3px; padding: 3px; border: 1px solid #d4d1c5; background: #fcfaf2; box-shadow: 0 2px 12px #39351612; border-radius: 8px; }

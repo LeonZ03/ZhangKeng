@@ -11,6 +11,6 @@
 | 输出目录 | `dist` |
 | 自定义域名 | `zhangkeng.leonz03.dpdns.org` |
 
-站点将 Three.js r180 随源码保存在 `site/vendor/`。构建只从 `site/` 复制发布资源，并写入 `dist/version.json`。原始图纸和照片留在本机 `references/`。用 `npm run preview` 检查发布产物。
+站点将 Three.js r180 随源码保存在 `site/vendor/`，正式发布使用预先导出的 `site/assets/zhangkeng.glb`。构建从 `site/` 复制发布资源，并写入 `dist/version.json`。原始图纸、照片及完整 Blender 工程保存在本地。用 `npm run preview` 检查发布产物。 [模型重建方法](reconstruction.md#重建-blender-工程和网页资产)
 
 推送 `main` 后，在 Pages 的生产部署记录确认提交和构建状态。首次发布还需核对自定义域的 HTTPS。访问线上 `version.json` 可确认域名正在提供的提交。

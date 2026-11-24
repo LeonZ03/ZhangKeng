@@ -4,7 +4,10 @@ import { extname, resolve, sep } from 'node:path';
 
 const directory = resolve(process.argv[2] ?? 'site');
 const port = Number(process.env.ZHANGKENG_PORT || 8765);
-const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const mime = {
+  '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json',
+  '.glb': 'model/gltf-binary', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp',
+};
 
 createServer(async (request, response) => {
   try {

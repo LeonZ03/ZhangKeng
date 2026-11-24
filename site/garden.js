@@ -29,8 +29,8 @@ function enclosure(parent, points, built) {
   const segments = points.slice(1).map((b, i) => [points[i], b]);
   segments.push([points.at(-1), [west, 10.62]], [[west, 9.13], points[0]]);
   for (const [a, b] of segments) {
-    wallEdge(parent, built ? mats.brick : mats.rock, a, b, datum + height / 2, height, 0.24);
-    if (!built) wallEdge(parent, mats.sill, a, b, datum + height, 0.065, 0.30);
+    wallEdge(parent, a, b, built ? mats.brick : mats.rock, datum + height / 2, height, 0.24);
+    if (!built) wallEdge(parent, a, b, mats.sill, datum + height, 0.065, 0.30);
   }
   if (built) return;
   for (const z of [9.1, 10.65]) box(parent, mats.plaster, west, datum + 0.5, z, 0.33, 1, 0.33);
