@@ -238,7 +238,7 @@ function makeRoof(parent) {
 
 export function buildModel() {
   const root = new THREE.Group();
-  root.name = '张坑别墅';
+  root.name = '樟坑别墅';
   const building = {};
   const furniture = new Map();
   for (const [id, floor] of Object.entries(floors)) {
