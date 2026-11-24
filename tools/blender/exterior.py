@@ -99,7 +99,7 @@ def fit_wing_wall_to_roof(obj, heights):
     obj.data.update()
 
 
-def fit_cross_closure(obj, heights):
+def fit_cross_closure(obj, heights, include_main_roof=True):
     world = obj.matrix_world
     local = world.inverted_safe()
     main_ridge, cross_ridge = heights["mainRidge"], heights["crossRidge"]
@@ -109,7 +109,10 @@ def fit_cross_closure(obj, heights):
         point = world @ vertex.co
         main = main_ridge - abs(point.y + 4.5) * main_slope
         cross = cross_ridge - abs(point.x - 5.9) * cross_slope
-        point.z = min(point.z, max(main, cross) - 0.044)
+        # A long rectangular partition has no intermediate top vertices at
+        # the valley. Keep it below the cross eave along its entire length.
+        ceiling = max(main, cross) - 0.044 if include_main_roof else cross - 0.035
+        point.z = min(point.z, ceiling)
         vertex.co = local @ point
     obj.data.update()
 
@@ -150,7 +153,7 @@ def refine_shell(scene, parent, walls, heights, textures, glass_mat, frame, seal
                 # Keep both upper partitions below the intersecting roof surfaces.
                 if obj.data.users > 1:
                     obj.data = obj.data.copy()
-                fit_cross_closure(obj, heights)
+                fit_cross_closure(obj, heights, include_main_roof=False)
         elif material in {"frame", "window"}:
             center, size = center_and_spans(obj)
             # All full-shell glazing is exterior here, including the balcony.
