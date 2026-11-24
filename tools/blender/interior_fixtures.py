@@ -35,6 +35,17 @@ def faucet(g, node, x, y, z, height=.216, reach=.124):
                                            (x + .041, y, z + .106)], .007)
 
 
+def interactive_faucet(g, parent, x, y, z, height, reach, key, label='厨房水龙头'):
+    # Pivot is the actual spout outlet; the faucet and its visible water stream
+    # remain selectable as one authored fixture.
+    node = g.group(parent, label, (x, y - reach, z + height * .43))
+    node['exploreAction'] = 'water'
+    node['exploreLabel'] = label
+    node['exploreAmount'] = .11
+    g.ctx.nodes[key] = node
+    faucet(g, node, 0, reach, -height * .43, height, reach)
+
+
 def bath(g, parent, plan):
     node = g.group(parent, 'Bath · sanitary assemblies', (plan['x'], -plan['z'], .014))
     node.scale.x = plan['direction']
@@ -99,7 +110,7 @@ def kitchen(g, parent):
     for x in [9.724, 10.033]:
         sink(g, node, 'Undermount stainless bowl', (x, -.442, .937), .157, .192, .144, 'sink')
     g.box(node, 'Center sink divider', 'sink', (9.878, -.441, .943), (.026, .377, .012), .006)
-    faucet(g, node, 9.879, -.191, .951, .242, .149)
+    interactive_faucet(g, node, 9.879, -.191, .951, .242, .149, 'ExploreKitchenTap')
     g.box(node, 'East cabinet base', 'cabinet', (11.388, -1.388, .492), (.564, 1.331, .815))
     g.box(node, 'East quartz return', 'quartz', (11.389, -1.386, .917), (.611, 1.321, .062), .006, grain='y')
     g.box(node, 'Oven dark glass front', 'graphite', (11.087, -1.377, .530), (.023, .598, .529), .007)
@@ -135,7 +146,11 @@ def bedside(g, parent, x, z, table_only=False):
     if not table_only:
         g.lathe(node, 'Stoneware lamp base', 'ceramic', (0, .026, .472), [
             (0, 0), (.064, 0), (.065, .026), (.040, .064), (.023, .117), (0, .117)], segments=24)
-        g.lathe(node, 'Linen lamp shade', 'linen', (0, .026, .567), [
+        lamp = g.group(node, '可操作床头台灯', (0, .026, .567))
+        lamp['exploreAction'] = 'light'
+        lamp['exploreLabel'] = '床头台灯'
+        g.ctx.nodes[f"ExploreLamp_{x}_{z}"] = lamp
+        g.lathe(lamp, 'Linen lamp shade', 'linen', (0, 0, 0), [
             (.113, 0), (.073, .153), (.069, .153), (.109, .004), (.113, 0)], segments=28)
 
 

@@ -42,7 +42,8 @@ h1 { font: 700 clamp(23px, 2.2vw, 32px)/1.1 var(--serif); letter-spacing: .055em
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 9px; min-height: 68px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
 .modes { display: flex; gap: 4px; padding: 4px; background: #f0ede4; border: 1px solid #e8e3d8; border-radius: 10px; }
 .modes button { min-height: 35px; border: 0; border-radius: 7px; background: transparent; padding: 0 clamp(8px, 1vw, 16px); font-size: 13px; font-weight: 650; white-space: nowrap; }
-.modes button:hover { background: #e8e5db; }
+.modes button:hover:not(:disabled, [aria-pressed="true"]) { background: #e8e5db; }
+.modes button:disabled { color: var(--soft); opacity: .62; }
 .modes button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 
 .stage { height: clamp(480px, 67vh, 960px); position: relative; isolation: isolate; overflow: hidden; background: radial-gradient(ellipse at 48% 43%, #f7f3e8 13%, #eeeadf 60%, #e4e0d4); }
@@ -67,6 +68,27 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 .camera-controls { position: absolute; bottom: 15px; right: 15px; display: flex; gap: 3px; padding: 3px; border: 1px solid #d4d1c5; background: #fcfaf2; box-shadow: 0 2px 12px #39351612; border-radius: 8px; }
 .camera-controls button { min-width: 41px; height: 39px; border: 0; border-radius: 5px; font: 500 23px/1 system-ui; background: transparent; }
 .camera-controls button:hover { background: var(--active); }
+.stage.exploring { background: linear-gradient(#c8d7df, #e9e8dc); }
+.exploring .view-caption, .exploring .camera-controls { display: none; }
+.toolbar .measure:disabled { opacity: .57; }
+.exploring canvas.explore-pickable { cursor: pointer; }
+.exploring.explore-looking canvas { cursor: grabbing; }
+.explore-hud { position: absolute; inset: 0; pointer-events: none; }
+.explore-tools { position: absolute; inset: 14px auto auto 14px; display: flex; gap: 7px; pointer-events: auto; }
+.explore-tools button { min-height: 44px; }
+.explore-reticle { position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; translate: -50% -50%; border: 1px solid #242923; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px #fff9; }
+.explore-reticle.aimed { background: #dce9b6; outline: 2px solid #eef6dd; outline-offset: 2px; }
+.explore-notices { position: absolute; inset: auto 12px 18px; display: grid; justify-items: center; gap: 5px; }
+.explore-notices p { max-width: 100%; padding: 6px 10px; border-radius: 6px; background: #262e23eb; color: #fff; text-align: center; font-size: 13px; line-height: 1.5; }
+.fly-controls, .touch-hint { display: none; }
+.fly-controls button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--sheet); font-weight: 700; touch-action: none; }
+.fly-controls .held { background: var(--accent); border-color: var(--accent); color: #fff; }
+.fly-directions { inset: auto auto 12px 12px; grid-template-columns: repeat(3, 44px); }
+.fly-directions [data-fly="forward"] { grid-area: 1 / 2; }
+.fly-directions [data-fly="left"] { grid-area: 2 / 1; }
+.fly-directions [data-fly="back"] { grid-area: 2 / 2; }
+.fly-directions [data-fly="right"] { grid-area: 2 / 3; }
+.fly-height { inset: auto 12px 12px auto; }
 .view-status { position: absolute; left: 15px; bottom: 15px; max-width: calc(100% - 165px); background: #fdfbf2f5; border: 1px solid #d9d7ca; border-radius: 8px; padding: 9px 12px; line-height: 1.5; font-size: 13px; color: var(--ink); box-shadow: 0 2px 12px #3935161a; }
 .view-error { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: min(380px, 85%); width: max-content; background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 20px; font-size: 15px; line-height: 1.7; }
 .labels { pointer-events: none; overflow: hidden; }
@@ -134,9 +156,9 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
   .brand-mark { scale: .89; margin-inline: -3px; }
   .workbench { grid-template-columns: minmax(0, 1fr); padding: 10px 9px 22px; }
   .stage { height: clamp(330px, 55svh, 590px); }
-  .toolbar { min-height: 57px; gap: 5px; padding-block: 7px; }
+  .toolbar { min-height: 57px; gap: 5px; padding-block: 7px; flex-wrap: wrap; }
   .modes { gap: 2px; padding: 3px; }
-  .modes button { min-height: 39px; padding-inline: clamp(6px, 2vw, 13px); font-size: 12px; }
+  .modes button { min-height: 44px; padding-inline: clamp(6px, 1.55vw, 13px); font-size: 12px; }
   .measure { padding-inline: 8px; font-size: 12px; }
   .view-caption { left: 12px; top: 12px; }
   .compass { right: 10px; top: 10px; }
@@ -147,5 +169,11 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
   .switches label { min-height: 41px; }
   .camera-controls button, .item-controls button { min-height: 44px; min-width: 44px; }
   .room-label { font-size: 10px; padding: 3px 4px; }
+}
+@media (pointer: coarse) {
+  .fly-controls { display: grid; position: absolute; gap: 4px; pointer-events: auto; }
+  .explore-notices { bottom: 116px; }
+  .desktop-hint { display: none; }
+  .touch-hint { display: inline; }
 }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }

@@ -28,6 +28,7 @@
           <button type="button" data-mode="exploded" aria-pressed="false">逐层展开</button>
           <button type="button" data-mode="cut" aria-pressed="false">单层剖切</button>
           <button type="button" data-mode="plan" aria-pressed="false">平面</button>
+          <button type="button" data-mode="explore" aria-pressed="false" disabled>自由探索</button>
         </div>
         <button type="button" class="outline-button measure" id="measure" aria-pressed="false">量尺寸</button>
       </div>
@@ -57,12 +58,37 @@
             <button type="button" id="zoom-out" title="缩小" aria-label="缩小">−</button>
             <button type="button" id="reset-view" title="复位视角" aria-label="复位视角">↺</button>
           </div>
+          <div class="explore-hud" id="explore-hud" hidden>
+            <div class="explore-tools" role="group" aria-label="探索控制">
+              <button class="outline-button" id="explore-reset" type="button">回到入口</button>
+              <button class="outline-button" id="explore-exit" type="button">退出探索</button>
+            </div>
+            <div class="explore-reticle" id="explore-reticle" aria-hidden="true" hidden></div>
+            <div class="explore-notices">
+              <p id="explore-target" hidden></p>
+              <p id="explore-feedback" role="status" hidden></p>
+            </div>
+            <div class="fly-controls fly-directions" role="group" aria-label="前后左右移动">
+              <button type="button" data-fly="forward" aria-label="向前">↑</button>
+              <button type="button" data-fly="left" aria-label="向左">←</button>
+              <button type="button" data-fly="back" aria-label="向后">↓</button>
+              <button type="button" data-fly="right" aria-label="向右">→</button>
+            </div>
+            <div class="fly-controls fly-height" role="group" aria-label="升降视角">
+              <button type="button" data-fly="up" aria-label="上升">升</button>
+              <button type="button" data-fly="down" aria-label="下降">降</button>
+            </div>
+          </div>
           <div id="view-status" class="view-status" role="status" hidden></div>
         </div>
         <div id="view-error" class="view-error" hidden></div>
       </div>
       <div class="view-footer">
         <p id="view-hint">拖动旋转 · 滚动缩放 · 右键拖动平移</p>
+        <p id="explore-hint" hidden>
+          <span class="desktop-hint">WASD 移动 · ↑ ↓ 或滚轮升降 · Shift 加速 · 拖动环顾 · 点击物品或对准按 Enter · 双击锁定鼠标，Esc 释放</span>
+          <span class="touch-hint">按住按钮移动或升降 · 滑动环顾 · 轻触物品</span>
+        </p>
         <p class="unit">米制模型 <span>1 m = 1 m</span></p>
       </div>
     </section>

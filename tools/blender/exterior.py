@@ -71,9 +71,90 @@ def exterior_opening(wall, opening, builder, glass, fittings, frame):
 
 def openings(scene, root, walls, trim, frame, glass_mat, fittings_mat):
     trim_builder, gaskets, panes, fittings = [MeshBuilder() for _ in range(4)]
+
+    def xwall_strip(builder, wall, center, elevation, width, height, thickness=.020, depth=.051):
+        builder.box((center, -wall['position'] + depth * (-1 if wall['position'] else 1), elevation),
+                    (width, thickness, height), bevel=.0025)
+
     for wall in walls:
         if wall["exterior"]:
             for opening in wall["openings"]:
+                if opening['type'] == 'slide' and wall['axis'] == 'x' and wall['position'] == 7.8:
+                    start, width = opening['start'], opening['width']
+                    sill, top = opening['sill'], opening['sill'] + opening['height']
+                    fw, half = .059, width / 2
+                    left, middle, right = start + fw, start + half, start + width - fw
+                    low, high = sill + fw, top - fw
+                    # Two real panels occupy separate track depths: the left
+                    # leaf slides behind the fixed right leaf to clear passage.
+                    pane_points = [
+                        (middle, -wall['position'] + .015, low), (right, -wall['position'] + .015, low),
+                        (right, -wall['position'] + .015, high), (middle, -wall['position'] + .015, high),
+                    ]
+                    panes.face(pane_points)
+                    for u in [middle + .003, right - .003]:
+                        xwall_strip(gaskets, wall, u, (low + high) / 2, .010, high - low)
+                    for v in [low + .004, high - .004]:
+                        xwall_strip(gaskets, wall, (middle + right) / 2, v, right - middle, .010)
+                    pivot = bpy.data.objects.new('可操作二层南阳台推拉玻璃门', None)
+                    root.users_collection[0].objects.link(pivot)
+                    pivot.parent = root
+                    pivot.location = (start, -wall['position'], 0)
+                    pivot['exploreAction'] = 'slide'
+                    pivot['exploreLabel'] = '二层南阳台推拉玻璃门'
+                    pivot['exploreAmount'] = half - fw
+                    frame_builder, glass_builder = MeshBuilder(), MeshBuilder()
+                    x0, x1 = fw, half - .003
+                    depth_frame = .046
+                    depth_glass = .014
+                    for u in [x0 + .027, x1 - .027]:
+                        frame_builder.box((u, depth_frame, (low + high) / 2), (.054, .057, high - low), bevel=.003)
+                    for z in [low + .027, high - .027]:
+                        frame_builder.box(((x0 + x1) / 2, depth_frame, z), (x1 - x0, .057, .054), bevel=.003)
+                    glass_builder.face([(x0 + .054, depth_glass, low + .054),
+                                        (x1 - .054, depth_glass, low + .054),
+                                        (x1 - .054, depth_glass, high - .054),
+                                        (x0 + .054, depth_glass, high - .054)])
+                    frame_builder.box((x1 - .11, depth_frame * 1.65, 1.52), (.018, .018, .14), bevel=.003)
+                    frame_builder.object(scene, pivot, 'Balcony sliding leaf frame and pull', frame)
+                    glass_builder.object(scene, pivot, 'Balcony sliding leaf safety glass', glass_mat)
+                    # Fixed surround remains fully static in its original measured opening.
+                    xwall_strip(gaskets, wall, start + fw / 2, (low + high) / 2, fw, high - low)
+                    xwall_strip(gaskets, wall, start + width - fw / 2, (low + high) / 2, fw, high - low)
+                    xwall_strip(gaskets, wall, start + width / 2, low + fw / 2, width, fw)
+                    xwall_strip(gaskets, wall, start + width / 2, high - fw / 2, width, fw)
+                    continue
+                if opening['type'] == 'entry' and wall['axis'] == 'x':
+                    # Keep the measured opening's surrounding shell and jambs,
+                    # while giving its existing glazed leaf a true hinge pivot.
+                    start, width = opening['start'], opening['width']
+                    top = opening['sill'] + opening['height']
+                    # Two glazed leaves meet at the opening center. Their outer
+                    # jambs stay fixed; each pivot carries its own glass, rails,
+                    # and pull so the front-left target selects the left leaf.
+                    leaf_w = width / 2 - .047 - .003
+                    for side, hinge_x, sign in [('左扇', start + .047, 1), ('右扇', start + width - .047, -1)]:
+                        pivot = bpy.data.objects.new(f'可操作南侧入户玻璃门{side}', None)
+                        root.users_collection[0].objects.link(pivot)
+                        pivot.parent = root
+                        pivot.location = (hinge_x, -wall['position'], 0)
+                        pivot['exploreAction'] = 'swing'
+                        pivot['exploreLabel'] = f'南侧入户玻璃门{side}'
+                        pivot['exploreAmount'] = 1.2 if sign > 0 else -1.2
+                        door_frame, door_glass = MeshBuilder(), MeshBuilder()
+                        x0, x1 = (0, leaf_w) if sign > 0 else (-leaf_w, 0)
+                        y = .006
+                        door_glass.face([(x0 + .043, y, .052), (x1 - .043, y, .052),
+                                         (x1 - .043, y, top - .049), (x0 + .043, y, top - .049)])
+                        for u in [x0 + .026, x1 - .026]:
+                            door_frame.box((u, y, top / 2), (.043, .057, top - .038), bevel=.004)
+                        for z in [.027, top - .027]:
+                            door_frame.box(((x0 + x1) / 2, y, z), (leaf_w, .057, .043), bevel=.004)
+                        pull_x = x1 - .10 if sign > 0 else x0 + .10
+                        door_frame.box((pull_x, -.033, 1.04), (.021, .019, .16), bevel=.004)
+                        door_frame.object(scene, pivot, f'South entrance {side} frame and handle', frame)
+                        door_glass.object(scene, pivot, f'South entrance {side} safety glass', glass_mat)
+                    continue
                 exterior_opening(wall, opening, trim_builder, panes, fittings, gaskets)
     trim_builder.object(scene, root, "North service entrance rain hood", trim)
     gaskets.object(scene, root, "Exterior insulated glazing seals", frame)
@@ -156,6 +237,25 @@ def refine_shell(scene, parent, walls, heights, textures, glass_mat, frame, seal
                 fit_cross_closure(obj, heights, include_main_roof=False)
         elif material in {"frame", "window"}:
             center, size = center_and_spans(obj)
+            if material == "frame":
+                removed = False
+                for wall in walls:
+                    if not wall["exterior"]:
+                        continue
+                    axis_x = wall["axis"] == "x"
+                    along = center.x if axis_x else -center.y
+                    distance = -center.y if axis_x else center.x
+                    if abs(distance - wall["position"]) >= .004:
+                        continue
+                    if any(opening["type"] in {"entry", "slide"} and opening["width"] > 1.2
+                           and abs(along - opening["start"] - opening["width"] / 2) < .004
+                           and size.z > 1.0 and size.x < .11 and size.y < .11
+                           for opening in wall["openings"]):
+                        bpy.data.objects.remove(obj, do_unlink=True)
+                        removed = True
+                        break
+                if removed:
+                    continue
             # All full-shell glazing is exterior here, including the balcony.
             railing = level and (center.y < -9.84 or (
                 min(abs(center.x - x) for x in (3.5, 8.3)) < 0.03 and center.y < -7.85

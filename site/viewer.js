@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
+import { createExplorer } from './explore.js';
 import { buildModel } from './model.js';
 import { floors, furnishings } from './plan.js';
 
@@ -48,6 +49,8 @@ function makeViewer() {
   const modelNote = $('model-note');
   const modelRetry = $('model-retry');
   const modelControls = document.querySelectorAll('[data-model-controls]');
+  const inspector = document.querySelector('.inspector');
+  const exploreButton = document.querySelector('[data-mode="explore"]');
   const mobile = matchMedia('(pointer: coarse)').matches;
   const elementary = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   elementary.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.35 : 1.65));
@@ -115,6 +118,8 @@ function makeViewer() {
   let shelf = { ground: 0, upper: 3.3, roof: 0 };
   let showingStage = false;
   let pendingAsset;
+  let surveyMode = 'exterior';
+  const explorer = createExplorer({ canvas, stage, requestFrame, exit: exitExploration });
 
   for (const item of furnishings) {
     const option = new Option(`${floors[item.floor].tag} · ${item.room} · ${item.name}`, item.id);
@@ -142,10 +147,14 @@ function makeViewer() {
     $('reset-layout').disabled = saved.size === 0;
   }
 
+  function requestFrame() {
+    if (!frameId) frameId = requestAnimationFrame(draw);
+  }
+
   function renderSoon(shadows = false) {
     dirty = true;
     if (shadows) elementary.shadowMap.needsUpdate = true;
-    if (!frameId) frameId = requestAnimationFrame(draw);
+    requestFrame();
   }
 
   function draw(now) {
@@ -162,17 +171,21 @@ function makeViewer() {
       dirty = true;
       if (fraction === 1) transition = undefined;
     }
-    const moved = controls.update();
-    if (dirty || moved) {
-      elementary.render(scene, camera);
-      projectLabels();
+    const exploring = state.mode === 'explore';
+    const movement = exploring ? explorer.update(now) : undefined;
+    const nextFrame = exploring ? movement.moving : controls.update();
+    if (movement?.shadows) elementary.shadowMap.needsUpdate = true;
+    if (dirty || (exploring ? movement.changed : nextFrame)) {
+      elementary.render(scene, exploring ? explorer.camera : camera);
+      if (exploring) $('north-arrow').style.rotate = `${explorer.camera.rotation.y}rad`;
+      else projectLabels();
       dirty = false;
       if (!showingStage) {
         showingStage = true;
         stage.dataset.ready = 'true';
       }
     }
-    if ((moved || transition) && !frameId) frameId = requestAnimationFrame(draw);
+    if (nextFrame || transition) requestFrame();
   }
 
   function projectLabels() {
@@ -197,7 +210,7 @@ function makeViewer() {
   function updateLabels() {
     labels = [];
     $('labels').replaceChildren();
-    if (!state.labels || state.mode === 'exterior') return;
+    if (!state.labels || state.mode === 'exterior' || state.mode === 'explore') return;
     if (state.mode === 'exploded') {
       label({ x: -0.7, y: 0.3, z: 8.9, track: model.building.ground.layer }, '1F · 一层', 'level-tag');
       label({ x: -0.7, y: 0.3, z: 8.9, track: model.building.upper.layer }, '2F · 二层', 'level-tag');
@@ -226,6 +239,7 @@ function makeViewer() {
     const half = Math.max(minWidth / aspect, minHeight) / 2;
     Object.assign(camera, { left: -half * aspect, right: half * aspect, top: half, bottom: -half });
     camera.updateProjectionMatrix();
+    explorer.resize(aspect);
     elementary.setSize(width, height, false);
     renderSoon();
   }
@@ -272,6 +286,7 @@ function makeViewer() {
     modelView.setAttribute('aria-busy', String(loading));
     modelNote.textContent = message;
     modelRetry.hidden = mode !== 'schematic';
+    exploreButton.disabled = mode !== 'photo';
     for (const element of modelControls) element.inert = loading;
   }
 
@@ -367,13 +382,14 @@ function makeViewer() {
       layer.layer.visible = !solo || id === state.floor;
       layer.cut.visible = solo || exploded;
       layer.full.visible = !layer.cut.visible;
-      layer.contents.visible = state.furniture;
+      layer.contents.visible = state.furniture || state.mode === 'explore';
     }
   }
 
   function show({ reset = false, animate = false } = {}) {
     const solo = state.mode === 'cut' || state.mode === 'plan';
     const exploded = state.mode === 'exploded';
+    const exploring = state.mode === 'explore';
     shelf = {
       ground: exploded ? 0.68 : 0,
       upper: floors.upper.elevation + (exploded ? state.spacing : 0),
@@ -391,7 +407,10 @@ function makeViewer() {
     modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === state.mode)));
     floorButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.floor === state.floor)));
     $('measure').setAttribute('aria-pressed', String(state.measuring));
+    $('measure').disabled = exploring;
     $('stage').classList.toggle('measuring', state.measuring);
+    stage.classList.toggle('exploring', exploring);
+    inspector.inert = exploring || stage.dataset.model === 'loading';
     $('furniture-visibility').checked = state.furniture;
     $('spacing-field').hidden = !exploded;
     $('spacing-value').value = `${state.spacing.toFixed(1)} m`;
@@ -399,6 +418,8 @@ function makeViewer() {
     const planHint = mobile ? '单指拖动平移 · 双指缩放' : '拖动平移 · 滚动或双指缩放';
     const gestureHint = state.mode === 'plan' ? planHint : orbitHint;
     $('view-hint').textContent = state.measuring ? '点选两个位置，测量水平距离' : gestureHint;
+    $('view-hint').hidden = exploring;
+    $('explore-hint').hidden = !exploring;
     const floor = floors[state.floor];
     $('floor-elevation').textContent = state.floor === 'ground' ? '±0.000' : state.floor === 'upper' ? '+3.300' : state.floor === 'roof' ? '照片估算' : '室外';
     $('scene-index').textContent = solo ? floor?.tag ?? (state.floor === 'roof' ? '屋面' : '室外') : exploded ? '逐层展开' : '整栋';
@@ -488,7 +509,7 @@ function makeViewer() {
   }
 
   canvas.addEventListener('pointerdown', event => {
-    if (!event.isPrimary || event.button !== 0) return;
+    if (state.mode === 'explore' || !event.isPrimary || event.button !== 0) return;
     pointRay(event);
     const editable = state.furniture && !state.measuring && ['plan', 'cut'].includes(state.mode) && floors[state.floor];
     const id = editable ? pick() : null;
@@ -521,6 +542,7 @@ function makeViewer() {
       takeMeasure();
     }
     gesture = undefined;
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     controls.enabled = true;
     $('stage').classList.remove('dragging');
     if (pendingAsset) renderSoon();
@@ -531,15 +553,32 @@ function makeViewer() {
   controls.addEventListener('change', () => renderSoon());
   new ResizeObserver(resize).observe($('stage'));
 
-  for (const button of modeButtons) button.addEventListener('click', () => {
-    const mode = button.dataset.mode;
-    if (mode === state.mode) return;
-    const animate = mode === 'exploded' || (state.mode === 'exploded' && mode === 'exterior');
+  function switchMode(mode, restoreSurvey = false) {
+    const previous = state.mode;
+    if (mode === previous || (mode === 'explore' && exploreButton.disabled)) return;
+    const exploring = mode === 'explore';
+    if (exploring) {
+      surveyMode = previous;
+      if (gesture) endGesture({ pointerId: gesture.pointerId, type: 'pointercancel' });
+    }
+    if (previous === 'explore') explorer.leave();
+    controls.enabled = !exploring;
+    const animate = !restoreSurvey && (mode === 'exploded' || (previous === 'exploded' && mode === 'exterior'));
     state.mode = mode;
     stopMeasure();
-    if (mode === 'exterior' || mode === 'exploded') state.item = '';
-    show({ reset: true, animate });
-  });
+    if (!restoreSurvey && (mode === 'exterior' || mode === 'exploded')) state.item = '';
+    show({ reset: !exploring && !restoreSurvey, animate });
+    if (exploring) explorer.enter(model);
+    if (restoreSurvey) resize();
+  }
+
+  function exitExploration() {
+    if (state.mode !== 'explore') return;
+    switchMode(surveyMode, true);
+    exploreButton.focus({ preventScroll: true });
+  }
+
+  for (const button of modeButtons) button.addEventListener('click', () => switchMode(button.dataset.mode));
   for (const button of floorButtons) button.addEventListener('click', () => {
     state.floor = button.dataset.floor;
     state.mode = state.mode === 'plan' ? 'plan' : 'cut';
@@ -589,15 +628,22 @@ function makeViewer() {
     renderSoon(true);
   });
   window.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || $('about').open) return;
+    if (event.key !== 'Escape' || event.defaultPrevented || state.mode === 'explore' || $('about').open) return;
     if (state.measuring) { stopMeasure(); show(); }
     else if (state.item) select('');
   });
   canvas.addEventListener('webglcontextlost', event => {
     event.preventDefault();
+    explorer.pause();
     status('图形上下文已断开，正在等待恢复。');
   });
   canvas.addEventListener('webglcontextrestored', () => { status(); renderSoon(true); });
+  $('about-open').addEventListener('click', explorer.pause);
+  $('about').addEventListener('close', () => {
+    if (state.mode !== 'explore') return;
+    canvas.focus({ preventScroll: true });
+    requestFrame();
+  });
   modelRetry.addEventListener('click', upgradeModel);
   show({ reset: true });
   upgradeModel();

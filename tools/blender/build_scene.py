@@ -209,6 +209,9 @@ def add_presentation(ctx):
 def web_model(ctx):
     """Combine opaque meshes within each switchable layer or furniture anchor."""
     originals = {obj: name for name, obj in ctx.nodes.items()}
+    for obj in ctx.nodes["Villa"].children_recursive:
+        if obj.get("exploreAction"):
+            originals.setdefault(obj, obj.name)
     collection = bpy.data.collections.new("临时网页导出")
     ctx.scene.collection.children.link(collection)
     clones = {}

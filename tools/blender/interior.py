@@ -105,11 +105,30 @@ def wardrobe(g, parent, item):
     w, d = item['w'], item['d']
     h = 2.16
     g.box(parent, 'Wardrobe plinth', 'walnut', (0, 0, .045), (w - .06, d - .06, .09))
-    g.box(parent, 'Wardrobe carcass', 'oak', (0, .024, (h + .085) / 2), (w, d - .048, h - .085))
+    # Build an actual hollow cabinet with a thin back, sides, top and shelves.
+    t = .025
+    g.box(parent, 'Wardrobe back panel', 'oak', (0, d / 2 - t / 2, h / 2), (w - .02, t, h - .07), .003)
+    for sign in [-1, 1]:
+        g.box(parent, 'Wardrobe side panel', 'oak', (sign * (w / 2 - t / 2), .008, h / 2), (t, d - .05, h - .07), .003)
+    for z in [.12, .73, 1.45, h - .055]:
+        g.box(parent, 'Wardrobe shelf', 'oak', (0, .008, z), (w - .05, d - .055, t), .003)
+    g.box(parent, 'Wardrobe divider', 'oak', (0, .008, 1.085), (t, d - .055, 2.04), .003)
     for i in range(4):
         x = (i - 1.5) * w / 4
-        g.box(parent, f'Veneered leaf {i + 1}', 'oak', (x, -d / 2 + .01, 1.105), (w / 4 - .009, .027, 2.048), .004)
-        g.box(parent, 'Pull backplate', 'bronze', (x + (.17 if i % 2 == 0 else -.17), -d / 2 - .016, 1.124), (.015, .026, .156))
+        leaf_w = w / 4 - .009
+        direction = 1 if i % 2 == 0 else -1
+        # Alternate hinge edges; every leaf swings out into the room from the
+        # cabinet front rather than rotating through the cabinet's contents.
+        hinge_x = x - direction * leaf_w / 2
+        hinge = g.group(parent, f'可操作衣柜门 {i + 1}', (hinge_x, -d / 2 + .01, 0))
+        hinge['exploreAction'] = 'swing'
+        hinge['exploreLabel'] = '衣柜门'
+        hinge['exploreAmount'] = -1.15 if direction > 0 else 1.15
+        g.ctx.nodes[f"ExploreWardrobe_{item['id']}_{i + 1}"] = hinge
+        g.box(hinge, f'Veneered leaf {i + 1}', 'oak', (direction * leaf_w / 2, 0, 1.105), (leaf_w, .027, 2.048), .004)
+        pull_x = direction * leaf_w * .70
+        g.box(hinge, 'Pull backplate', 'bronze', (pull_x, -.026, 1.124), (.015, .026, .156))
+        g.box(hinge, 'Wardrobe pull', 'bronze', (pull_x, -.047, 1.124), (.012, .018, .11), .004)
 
 
 def sofa(g, parent, item):
