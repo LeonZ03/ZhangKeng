@@ -6,7 +6,7 @@ const directory = resolve(process.argv[2] ?? 'site');
 const port = Number(process.env.ZHANGKENG_PORT || 8765);
 const mime = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json',
-  '.glb': 'model/gltf-binary', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp',
+  '.glb': 'model/gltf-binary', '.gz': 'application/gzip', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp',
 };
 
 createServer(async (request, response) => {
@@ -18,7 +18,11 @@ createServer(async (request, response) => {
       return;
     }
     const content = await readFile(file);
-    response.writeHead(200, { 'Content-Type': mime[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+    response.writeHead(200, {
+      'Content-Type': mime[extname(file)] || 'application/octet-stream',
+      'Content-Length': content.length,
+      'Cache-Control': 'no-store',
+    });
     response.end(content);
   } catch {
     response.writeHead(404).end('未找到页面');

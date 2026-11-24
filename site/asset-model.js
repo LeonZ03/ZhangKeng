@@ -3,6 +3,41 @@ import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
 import { furnishings } from './plan.js';
 
 const assetUrl = new URL('./assets/zhangkeng.glb', import.meta.url);
+const downloadIdleLimit = 25000;
+
+async function downloadAsset(onProgress) {
+  const { packedModel, packedBytes } = document.getElementById('stage').dataset;
+  const packed = Boolean(packedModel && typeof DecompressionStream === 'function' && typeof TransformStream === 'function');
+  const url = packed ? new URL(packedModel, import.meta.url) : assetUrl;
+  const request = new AbortController();
+  let timeout;
+  const keepAlive = () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => request.abort(), downloadIdleLimit);
+  };
+
+  try {
+    keepAlive();
+    const response = await fetch(url, { signal: request.signal, cache: packed ? 'force-cache' : 'default' });
+    if (!response.ok) throw new Error(`Model download returned HTTP ${response.status}.`);
+    keepAlive();
+    const total = (packed ? Number(packedBytes) : 0) || Number(response.headers.get('content-length'));
+    if (!response.body || typeof TransformStream !== 'function') return await response.arrayBuffer();
+    let received = 0;
+    let stream = response.body.pipeThrough(new TransformStream({
+      transform(chunk, controller) {
+        keepAlive();
+        received += chunk.byteLength;
+        onProgress(received, total);
+        controller.enqueue(chunk);
+      },
+    }));
+    if (packed) stream = stream.pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).arrayBuffer();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 function requireDescendant(parent, name) {
   const node = parent.getObjectByName(name);
@@ -10,8 +45,10 @@ function requireDescendant(parent, name) {
   return node;
 }
 
-export async function loadAssetModel() {
-  const { scene } = await new GLTFLoader().loadAsync(assetUrl.href);
+export async function loadAssetModel(onProgress, onDownloaded) {
+  const data = await downloadAsset(onProgress);
+  onDownloaded();
+  const { scene } = await new GLTFLoader().parseAsync(data, new URL('.', assetUrl).href);
   const root = requireDescendant(scene, 'Villa');
   const building = Object.fromEntries([['ground', 'Ground'], ['upper', 'Upper']].map(([id, name]) => {
     const layer = requireDescendant(root, `${name}Floor`);

@@ -40,6 +40,9 @@ function clampPlacement(item, x, z, angle) {
 function makeViewer() {
   const scene = new THREE.Scene();
   const stage = $('stage');
+  const modelNote = $('model-note');
+  const modelRetry = $('model-retry');
+  const modelControls = document.querySelectorAll('[data-model-controls]');
   const mobile = matchMedia('(pointer: coarse)').matches;
   const elementary = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   elementary.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.35 : 1.65));
@@ -143,6 +146,7 @@ function makeViewer() {
   function draw(now) {
     frameId = 0;
     if (pendingAsset && !gesture) applyAsset();
+    if (stage.dataset.model === 'loading') return;
     if (transition) {
       const fraction = Math.min(1, (now - transition.start) / 410);
       const t = 1 - (1 - fraction) ** 3;
@@ -255,6 +259,15 @@ function makeViewer() {
     status();
   }
 
+  function showModelStatus(mode, message) {
+    const loading = mode === 'loading';
+    stage.dataset.model = mode;
+    stage.setAttribute('aria-busy', String(loading));
+    modelNote.textContent = message;
+    modelRetry.hidden = mode !== 'schematic';
+    for (const element of modelControls) element.inert = loading;
+  }
+
   function applyAsset() {
     const fallback = model;
     model = pendingAsset.model;
@@ -292,9 +305,7 @@ function makeViewer() {
 
     furnishings.forEach(place);
     scene.add(model.root);
-    stage.dataset.model = 'photo';
-    $('model-note').textContent = '写实模型已加载';
-    $('model-note').classList.add('visually-hidden');
+    showModelStatus('photo', '写实模型已加载');
     updateModelVisibility();
     updateLabels();
     dirty = true;
@@ -302,15 +313,21 @@ function makeViewer() {
   }
 
   async function upgradeModel() {
+    showModelStatus('loading', '正在加载写实模型…');
     try {
       const { loadAssetModel, makeDaylightEnvironment } = await import('./asset-model.js');
-      const asset = await loadAssetModel();
+      const asset = await loadAssetModel((received, total) => {
+        if (!total) return;
+        const percent = Math.min(100, Math.floor(received / total * 100));
+        const note = `正在下载写实模型 · ${percent}%`;
+        if (modelNote.textContent !== note) modelNote.textContent = note;
+      }, () => { modelNote.textContent = '下载完成，正在生成三维画面…'; });
       pendingAsset = { model: asset, environment: makeDaylightEnvironment() };
       renderSoon();
     } catch (error) {
       console.warn('Villa model could not load.', error);
-      stage.dataset.model = 'schematic';
-      $('model-note').textContent = '写实模型暂不可用，当前为示意模型。';
+      showModelStatus('schematic', '写实模型加载失败，当前为示意模型。');
+      renderSoon(true);
     }
   }
 
@@ -563,6 +580,7 @@ function makeViewer() {
     status('图形上下文已断开，正在等待恢复。');
   });
   canvas.addEventListener('webglcontextrestored', () => { status(); renderSoon(true); });
+  modelRetry.addEventListener('click', upgradeModel);
   show({ reset: true });
   upgradeModel();
 }
@@ -571,6 +589,8 @@ try {
   makeViewer();
 } catch (error) {
   console.error(error);
+  $('stage').dataset.model = 'preview';
+  $('stage').setAttribute('aria-busy', 'false');
   $('model-note').hidden = true;
   $('view-error').textContent = '三维模型暂时无法打开。请启用浏览器的 WebGL 2 和硬件加速，再刷新页面。';
   $('view-error').hidden = false;

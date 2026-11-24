@@ -22,7 +22,7 @@
 
   <main class="workbench">
     <section class="view" aria-label="别墅查看器">
-      <div class="toolbar">
+      <div class="toolbar" data-model-controls inert>
         <div class="modes" role="group" aria-label="视图">
           <button type="button" data-mode="exterior" aria-pressed="true">整栋</button>
           <button type="button" data-mode="exploded" aria-pressed="false">逐层展开</button>
@@ -32,16 +32,18 @@
         <button type="button" class="outline-button measure" id="measure" aria-pressed="false">量尺寸</button>
       </div>
 
-      <div class="stage" id="stage" aria-label="三维模型视口" data-model="loading">
+      <div class="stage" id="stage" aria-label="三维模型视口" aria-busy="true" data-model="loading" data-packed-model="" data-packed-bytes="">
+        <img class="model-preview" id="model-preview" src="./assets/zhangkeng-preview.jpg" width="1040" height="780" fetchpriority="high" alt="樟坑别墅主屋与庭院的写实预览">
         <div id="viewport"></div>
         <div class="view-caption">
           <span class="scene-index" id="scene-index">整栋</span>
           <p id="scene-text">主屋与庭院</p>
           <span id="model-note" class="model-note" role="status">正在加载写实模型…</span>
+          <button type="button" class="outline-button model-retry" id="model-retry" hidden>重试写实模型</button>
         </div>
         <div class="labels" id="labels" aria-hidden="true"></div>
         <div class="compass" aria-hidden="true"><span>北</span><i id="north-arrow"></i></div>
-        <div class="camera-controls" role="group" aria-label="相机控制">
+        <div class="camera-controls" role="group" aria-label="相机控制" data-model-controls inert>
           <button type="button" id="zoom-in" title="放大" aria-label="放大">＋</button>
           <button type="button" id="zoom-out" title="缩小" aria-label="缩小">−</button>
           <button type="button" id="reset-view" title="复位视角" aria-label="复位视角">↺</button>
@@ -55,7 +57,7 @@
       </div>
     </section>
 
-    <aside class="inspector" aria-label="楼层和布置设置">
+    <aside class="inspector" aria-label="楼层和布置设置" data-model-controls inert>
       <section class="inspector-section layers">
         <div class="section-heading"><h2>楼层</h2><span id="floor-elevation">±0.000</span></div>
         <div class="layer-list" role="group" aria-label="楼层">

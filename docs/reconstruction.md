@@ -50,6 +50,8 @@ blender -b --factory-startup --python-exit-code 1 --python tools/blender/build_s
 
 可编辑工程保存在 `.work/blender/樟坑别墅.blend`，纹理已打包。网页使用 `site/assets/zhangkeng.glb`，按切换层和家具锚点合并外观材质一致的网格。要重新渲染三处照片视角、庭院、楼层剖切、客餐厅和茶室，执行 `blender -b .work/blender/樟坑别墅.blend --python tools/blender/render_review.py`。
 
+更新整栋模型后，用新渲染的庭院总览更新 `site/assets/zhangkeng-preview.jpg` 首屏预览。
+
 ## 查看器
 
 [尺寸数据](../site/plan.js) 保存主轴、墙线、门窗洞口和家具摆位。庭院可切换施工方案与施工阶段示意。楼层按钮进入单层剖切，平面视图可测水平距离。家具可拖动、按 10 cm 步进微调或旋转 90°，摆位保存在当前浏览器，可恢复图纸布局。
