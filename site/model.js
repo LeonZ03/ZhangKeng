@@ -10,6 +10,10 @@ const mainSlope = (roof.mainRidge - roof.mainEave) / mainMid;
 const crossSlope = (roof.crossRidge - roof.crossEave) / 2.4;
 const mainHeight = (z) => roof.mainRidge - Math.abs(z - mainMid) * mainSlope;
 const crossHeight = (x) => roof.crossRidge - Math.abs(x - crossMid) * crossSlope;
+const groundOutline = [
+  [-0.1, -0.1], [11.9, -0.1], [11.9, 9.1], [8.2, 9.1],
+  [8.2, 7.9], [3.6, 7.9], [3.6, 9.1], [-0.1, 9.1],
+];
 
 function axisBox(parent, material, wall, begin, end, low, high, depth, offset = 0) {
   if (end - begin < 0.002 || high - low < 0.002) return;
@@ -97,12 +101,49 @@ function walls(parent, floor, cut) {
           if (y >= Math.min(top(a), top(b)) || (opening && y >= opening.sill && y <= opening.sill + opening.height)) continue;
           axisBox(parent, mats.trim, wall, a, b, y, y + 0.014, thickness + 0.004);
         }
-        if (!floor.elevation && (!opening || opening.sill > 0.2)) {
-          axisBox(parent, mats.footer, wall, a, b, 0.002, 0.18, thickness + 0.008);
-        }
       }
     }
     openings.forEach(opening => frameOpening(parent, wall, opening, slice));
+  }
+}
+
+function groundPlinth(parent) {
+  const lip = 0.004;
+  const cornerOffsets = groundOutline.map((_, index, points) => {
+    const [px, pz] = points.at(index - 1);
+    const [nx, nz] = points[(index + 1) % points.length];
+    return [Math.sign(nz - pz), Math.sign(px - nx)];
+  });
+  for (const [index, start] of groundOutline.entries()) {
+    const next = (index + 1) % groundOutline.length;
+    const end = groundOutline[next];
+    const along = start[0] === end[0] ? 1 : 0;
+    const across = 1 - along;
+    const axis = along === 0 ? 'x' : 'z';
+    const outward = Math.sign(end[along] - start[along]) * (along === 0 ? -1 : 1);
+    const low = Math.min(start[along], end[along]), high = Math.max(start[along], end[along]);
+    const middle = (low + high) / 2;
+    const wall = floors.ground.walls.find(w => w.exterior && w.axis === axis &&
+      w.start < middle && w.end > middle &&
+      Math.abs(w.position + outward * w.thickness / 2 - start[across]) < 0.001);
+    // At the doors, stop the band just before the jamb face.
+    const gaps = wall.openings.filter(o => o.sill <= 0.2)
+      .flatMap(o => [o.start - 0.002, o.start + o.width + 0.002]).sort((a, b) => a - b);
+    const ends = [low, ...gaps, high];
+    const bandPoint = (coordinate, offset) => {
+      // Both ends at a corner meet on the same miter across the wall thickness.
+      if (coordinate === start[along]) return start.map((v, i) => v + offset * cornerOffsets[index][i]);
+      if (coordinate === end[along]) return end.map((v, i) => v + offset * cornerOffsets[next][i]);
+      const point = [...start];
+      point[along] = coordinate;
+      point[across] += offset * outward;
+      return point;
+    };
+    for (let i = 0; i < ends.length - 1; i += 2) {
+      const a = ends[i], b = ends[i + 1], inside = -wall.thickness - lip;
+      plate(parent, mats.footer, [bandPoint(a, lip), bandPoint(b, lip), bandPoint(b, inside), bandPoint(a, inside)],
+        0.18, 0.178);
+    }
   }
 }
 
@@ -137,7 +178,7 @@ function stairs(parent) {
 
 function floorSlabs(parent, id) {
   const shape = id === 'ground'
-    ? [[-0.1, -0.1], [11.9, -0.1], [11.9, 9.1], [8.2, 9.1], [8.2, 7.9], [3.6, 7.9], [3.6, 9.1], [-0.1, 9.1]]
+    ? groundOutline
     : [[-0.1, -0.1], [11.9, -0.1], [11.9, 9.1], [8.4, 9.1], [8.4, 10], [3.4, 10], [3.4, 9.1], [-0.1, 9.1]];
   plate(parent, mats.tile, shape, 0, id === 'ground' ? 0.18 : 0.22);
   for (const room of floors[id].rooms) {
@@ -250,7 +291,10 @@ export function buildModel() {
     walls(full, floor, false);
     walls(cut, floor, true);
     if (id === 'upper') { balcony(full, false); balcony(cut, true); }
-    if (id === 'ground') stairs(layer);
+    if (id === 'ground') {
+      groundPlinth(full);
+      stairs(layer);
+    }
     for (const [itemId, object] of buildFurniture(contents, id)) furniture.set(itemId, object);
     cut.visible = false;
     building[id] = { layer, full, cut, contents };

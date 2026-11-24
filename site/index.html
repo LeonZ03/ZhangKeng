@@ -28,16 +28,13 @@
         <span>WASD 移动 · ↑↓ 或滚轮升降 · Shift 加速</span>
         <span>拖动环顾 · 点击物品或按 Enter · 双击锁定鼠标，Esc 释放</span>
       </p>
-      <details class="explore-menu" id="explore-menu">
-        <summary class="outline-button">探索操作 <span aria-hidden="true">⌄</span></summary>
-        <div class="explore-menu-panel">
-          <p class="touch-hint">按住按钮移动或升降，滑动环顾，轻触物品。</p>
-          <div class="explore-menu-actions">
-            <button class="outline-button" id="explore-reset" type="button">回到入口</button>
-            <button class="outline-button" id="explore-exit" type="button">退出探索</button>
-          </div>
-        </div>
-      </details>
+      <button class="explore-reset" id="explore-reset" type="button" aria-label="回到入口" title="回到入口">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="6.5"/>
+          <circle cx="12" cy="12" r="2"/>
+          <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+        </svg>
+      </button>
     </div>
   </header>
 

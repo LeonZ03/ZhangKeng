@@ -12,7 +12,6 @@ export function createExplorer({ canvas, requestFrame, exit }) {
   camera.rotation.order = 'YXZ';
   const hud = document.getElementById('explore-hud');
   const header = document.getElementById('explore-header');
-  const menu = document.getElementById('explore-menu');
   const reticle = document.getElementById('explore-reticle');
   const notice = document.getElementById('explore-feedback');
   const detail = document.getElementById('explore-detail');
@@ -137,7 +136,6 @@ export function createExplorer({ canvas, requestFrame, exit }) {
 
   function reset() {
     pause();
-    menu.open = false;
     camera.position.set(4.47, 1.57, 11.60);
     camera.rotation.set(0, 0, 0);
     aim = undefined;
@@ -169,7 +167,6 @@ export function createExplorer({ canvas, requestFrame, exit }) {
     world.finish();
     hud.hidden = true;
     header.hidden = true;
-    menu.open = false;
     reticle.hidden = true;
     canvas.removeAttribute('tabindex');
     canvas.setAttribute('aria-label', overviewLabel);
@@ -179,7 +176,6 @@ export function createExplorer({ canvas, requestFrame, exit }) {
 
   canvas.addEventListener('pointerdown', event => {
     if (!ready() || locked || event.button !== 0 || drag) return;
-    menu.open = false;
     canvas.focus({ preventScroll: true });
     drag = { id: event.pointerId, x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY };
     wasDragged = false;
@@ -236,7 +232,6 @@ export function createExplorer({ canvas, requestFrame, exit }) {
     aim = undefined;
     invalidateAim();
   });
-  menu.addEventListener('toggle', () => { if (menu.open) pause(); });
   canvas.addEventListener('wheel', event => {
     if (!ready() || event.ctrlKey || !event.deltaY) return;
     event.preventDefault();
@@ -253,13 +248,10 @@ export function createExplorer({ canvas, requestFrame, exit }) {
     if (event.code === 'Escape' && !event.repeat) {
       event.preventDefault();
       if (locked) pause();
-      else if (menu.open) {
-        menu.open = false;
-        canvas.focus({ preventScroll: true });
-      } else exit();
+      else exit();
       return;
     }
-    if (menu.open || (!locked && document.activeElement !== canvas) || event.altKey || event.ctrlKey || event.metaKey) return;
+    if ((!locked && document.activeElement !== canvas) || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.code === 'Enter' || event.code === 'Space') {
       event.preventDefault();
       if (!event.repeat) act(center);
@@ -299,7 +291,6 @@ export function createExplorer({ canvas, requestFrame, exit }) {
     });
   }
   document.getElementById('explore-reset').addEventListener('click', reset);
-  document.getElementById('explore-exit').addEventListener('click', exit);
 
   function resize(aspect) {
     camera.aspect = aspect;
