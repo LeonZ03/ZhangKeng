@@ -25,7 +25,7 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 button { transition: background .16s, color .16s, border-color .16s; }
 h1, h2, p { margin: 0; }
 
-.masthead, .workbench { position: relative; z-index: 1; pointer-events: none; }
+.masthead, .workbench { position: relative; pointer-events: none; }
 .masthead { z-index: 2; flex: none; min-height: 90px; padding: 16px clamp(16px, 3.2vw, 52px); display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .masthead button, .toolbar button, .inspector, .camera-controls, .model-retry { pointer-events: auto; }
 .brand { display: flex; gap: 15px; align-items: center; padding-inline-end: 7px; }
@@ -67,11 +67,14 @@ h1 { font: 700 clamp(23px, 2.2vw, 32px)/1.1 var(--serif); letter-spacing: .055em
 #viewport canvas.dragging { cursor: grabbing; }
 #viewport canvas.measuring { cursor: crosshair; }
 .view-caption { pointer-events: none; position: absolute; left: 19px; top: 17px; }
-.scene-index { display: inline-block; background: #fdfaf1df; border: 1px solid #d8d5c9; border-radius: 5px; font-size: 11px; font-weight: 650; padding: 4px 8px; color: #494d3e; }
-.view-caption p { font: 600 clamp(16px, 1.6vw, 22px)/1.45 var(--serif); margin-top: 6px; }
+.view-caption p { font: 600 clamp(16px, 1.6vw, 22px)/1.45 var(--serif); }
 .model-note { display: block; margin-top: 5px; color: var(--soft); font-size: 12px; line-height: 1.5; }
-.view-caption p, .model-note, .view-footer p { width: fit-content; border-radius: 4px; background: var(--paper); }
-.stage[data-model="schematic"] .view-caption { padding: 8px 10px; border-radius: 8px; background: #fdfbf3ed; }
+.view-caption p, .model-note, .view-footer p { width: fit-content; }
+@supports (mix-blend-mode: difference) {
+  @media (forced-colors: none) {
+    .view-caption p, .model-note, .view-footer p { color: #fff; mix-blend-mode: difference; }
+  }
+}
 .model-retry { margin-top: 8px; min-height: 34px; pointer-events: auto; font-size: 12px; }
 .compass { pointer-events: none; position: absolute; right: 17px; top: 17px; display: grid; align-content: center; place-items: center; gap: 3px; border: 1px solid #d5d3c7; width: 43px; height: 55px; background: #fcfaf1df; border-radius: 24px; color: #444b3b; font-size: 11px; font-weight: 700; }
 .compass i { display: block; background: var(--accent); height: 18px; width: 17px; clip-path: polygon(50% 0, 96% 97%, 50% 71%, 4% 97%); }
@@ -225,7 +228,6 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
   #phone-settings-open { display: inline-flex; }
   .view-caption { left: var(--phone-left); top: 5px; }
   .view-caption p { font-size: 14px; }
-  .scene-index, .stage[data-model="photo"] .model-note { display: none; }
   .compass { right: var(--phone-right); top: 10px; width: 35px; height: 44px; }
   .compass i { width: 14px; height: 14px; }
   .camera-controls { right: var(--phone-right); bottom: 8px; }

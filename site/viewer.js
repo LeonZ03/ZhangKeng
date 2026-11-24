@@ -314,6 +314,7 @@ function makeViewer() {
     modelView.hidden = loading;
     modelView.setAttribute('aria-busy', String(loading));
     modelNote.textContent = message;
+    modelNote.hidden = !message;
     modelRetry.hidden = mode !== 'schematic';
     exploreButton.disabled = mode !== 'photo';
     for (const element of modelControls) element.inert = loading;
@@ -356,7 +357,7 @@ function makeViewer() {
 
     furnishings.forEach(place);
     scene.add(model.root);
-    showModelStatus('photo', '写实模型已加载');
+    showModelStatus('photo');
     updateModelVisibility();
     updateLabels();
     dirty = true;
@@ -449,7 +450,6 @@ function makeViewer() {
     $('view-hint').hidden = exploring;
     const floor = floors[state.floor];
     $('floor-elevation').textContent = state.floor === 'ground' ? '±0.000' : state.floor === 'upper' ? '+3.300' : state.floor === 'roof' ? '照片估算' : '室外';
-    $('scene-index').textContent = solo ? floor?.tag ?? (state.floor === 'roof' ? '屋面' : '室外') : exploded ? '逐层展开' : '整栋';
     $('scene-text').textContent = solo
       ? floor ? `${floor.label} · ${floor.size.map(n => n.toFixed(2)).join(' × ')} m` : state.floor === 'yard' ? '北花园与入户铺装' : '十字坡屋面'
       : exploded ? '一层、二层与屋顶' : '主屋与庭院';
