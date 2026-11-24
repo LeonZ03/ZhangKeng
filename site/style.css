@@ -28,12 +28,6 @@ h1, h2, p { margin: 0; }
 .masthead, .workbench { position: relative; z-index: 1; pointer-events: none; }
 .masthead { z-index: 2; flex: none; min-height: 90px; padding: 16px clamp(16px, 3.2vw, 52px); display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .masthead button, .toolbar button, .inspector, .camera-controls, .model-retry { pointer-events: auto; }
-@supports (paint-order: stroke fill) {
-  .brand h1, .brand p, .modes button[aria-pressed="false"], #explore-hint {
-    -webkit-text-stroke: 1.5px var(--paper);
-    paint-order: stroke fill;
-  }
-}
 .brand { display: flex; gap: 15px; align-items: center; padding-inline-end: 7px; }
 .brand-mark { width: 45px; height: 45px; border-radius: 10px; background: var(--accent); color: #f9f6ed; position: relative; flex: 0 0 auto; }
 .brand-mark::before { content: ""; position: absolute; top: 12px; left: 14px; width: 16px; height: 16px; rotate: 45deg; border-left: 1.5px solid currentColor; border-top: 1.5px solid currentColor; }
