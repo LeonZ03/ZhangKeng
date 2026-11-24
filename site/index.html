@@ -22,7 +22,7 @@
       <span class="brand-mark" aria-hidden="true"><i></i></span>
       <div><h1>郑家大院</h1><p>三维装修参考</p></div>
     </div>
-    <button class="outline-button" id="about-open" type="button">图纸与尺寸 <span aria-hidden="true">↗</span></button>
+    <button class="outline-button" id="about-open" type="button" aria-haspopup="dialog" aria-controls="about">图纸与尺寸</button>
     <div class="explore-header" id="explore-header" hidden>
       <p id="explore-hint" class="desktop-hint">
         <span>WASD 移动 · ↑↓ 或滚轮升降 · Shift 加速</span>
@@ -149,15 +149,20 @@
     </div>
   </dialog>
 
-  <dialog id="about">
-    <div class="dialog-heading"><h2>图纸与尺寸</h2><form method="dialog"><button type="submit" class="outline-button">关闭</button></form></div>
-    <dl class="source-stats"><div><dt>东西主轴</dt><dd>11.80 m</dd></div><div><dt>二层标高</dt><dd>+3.300 m</dd></div><div><dt>主屋外包</dt><dd>12.00 × 9.20 m</dd></div></dl>
-    <ul class="source-notes">
-      <li>建筑平面按 2026 年 4 月设计方案的两张 1:50 图定位。轴距为 3.50 / 4.80 / 3.50 m，二层西北和东侧按原图留空。</li>
-      <li>庭院依据施工图第 14–19 页定位。庭院标高按入户台阶对齐至建筑标高。</li>
-      <li>现场照片用于复原门窗外观、木梯、玻璃护栏及十字坡屋面。檐口与屋脊高度为照片估算。</li>
-      <li>家具根据图示位置和比例还原。家具规格、饰面与局部标高需在采购和施工前复尺。</li>
-    </ul>
+  <dialog id="about" aria-labelledby="about-title">
+    <div class="dialog-heading">
+      <h2 id="about-title">图纸与尺寸</h2>
+      <div class="drawing-actions">
+        <button type="button" class="outline-button" id="drawing-zoom" aria-controls="drawing-scroll" aria-pressed="false">放大</button>
+        <form method="dialog"><button type="submit" class="outline-button" autofocus>关闭</button></form>
+      </div>
+    </div>
+    <div id="drawing-scroll" class="drawing-scroll" role="region" aria-label="建筑设计方案图纸" tabindex="0">
+      <div class="drawing-pages">
+        <img src="./assets/drawings/floor-plan-1.png" width="2646" height="3742" loading="lazy" alt="一层平面图，比例 1:50">
+        <img src="./assets/drawings/floor-plan-2.png" width="2646" height="3742" loading="lazy" alt="二层平面图，比例 1:50">
+      </div>
+    </div>
   </dialog>
 </body>
 </html>

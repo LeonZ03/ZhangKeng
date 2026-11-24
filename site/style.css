@@ -155,12 +155,25 @@ dialog { width: min(560px, calc(100vw - 28px)); background: var(--sheet); border
 dialog::backdrop { background: rgb(30 33 26 / 45%); }
 .dialog-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .dialog-heading h2 { font: 700 23px/1.3 var(--serif); }
-.source-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-block: 16px; }
-.source-stats div { flex: 1; min-width: 110px; background: #eeefe6; border-radius: 7px; padding: 11px; }
-.source-stats dt { font-size: 11px; color: var(--soft); }
-.source-stats dd { margin: 5px 0 0; font: 700 14px/1.4 Consolas, monospace; }
-.source-notes { padding-inline-start: 19px; margin-bottom: 0; font-size: 13px; line-height: 1.7; }
-.source-notes li + li { margin-top: 7px; }
+#about {
+  /* Two portrait A2 sheets have a combined width of about 1.414 times their height. */
+  width: min(1600px, calc(100vw - 24px), calc(141.4vh - 128px));
+  width: min(1600px, calc(100vw - 24px), calc(141.4dvh - 128px));
+  min-width: min(340px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: clamp(10px, 1.2vw, 16px);
+  overflow: hidden;
+}
+#about[open] { display: flex; flex-direction: column; gap: 12px; }
+#about .dialog-heading { flex-shrink: 0; }
+.drawing-actions { display: flex; gap: 8px; }
+.drawing-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.drawing-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.drawing-pages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.drawing-pages img { display: block; width: 100%; height: auto; background: white; }
+#about:has(#drawing-zoom[aria-pressed="true"]) .drawing-pages { width: max(200%, 1360px); }
 
 @media (min-width: 1500px) { .workbench { grid-template-columns: minmax(0, 1fr) 310px; } }
 @media (max-width: 900px) {
@@ -235,7 +248,7 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
   .phone-settings-heading h2 { font-size: 18px; }
   #phone-settings .inspector { max-height: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
   #phone-settings select { min-height: 44px; font-size: 16px; }
-  #about { max-height: calc(100dvh - 24px); overflow-y: auto; }
+  #about .dialog-heading h2 { font-size: 18px; }
   .layer-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inspector-section { padding: 14px var(--phone-right) 14px var(--phone-left); }
   .switches label { min-height: 44px; }

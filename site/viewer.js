@@ -16,7 +16,17 @@ const state = {
   furniture: true, labels: true, item: '', measuring: false,
 };
 
-$('about-open').addEventListener('click', () => $('about').showModal());
+const drawingsDialog = $('about');
+const drawingZoom = $('drawing-zoom');
+$('about-open').addEventListener('click', () => drawingsDialog.showModal());
+drawingZoom.addEventListener('click', () => {
+  const zoomed = drawingZoom.getAttribute('aria-pressed') === 'true';
+  drawingZoom.setAttribute('aria-pressed', String(!zoomed));
+});
+drawingsDialog.addEventListener('close', () => {
+  drawingZoom.setAttribute('aria-pressed', 'false');
+  $('drawing-scroll').scrollTo(0, 0);
+});
 
 function connectPhoneSettings() {
   const sidebarHost = inspector.parentElement;
