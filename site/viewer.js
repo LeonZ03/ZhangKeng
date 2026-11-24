@@ -12,7 +12,7 @@ const phoneSettings = $('phone-settings');
 const items = new Map(furnishings.map(item => [item.id, item]));
 const storageKey = 'zhangkeng.furniture.v1';
 const state = {
-  mode: 'exterior', floor: 'ground', phase: 'proposal', spacing: 2.6,
+  mode: 'exterior', floor: 'ground', spacing: 2.6,
   furniture: true, labels: true, item: '', measuring: false,
 };
 
@@ -241,7 +241,7 @@ function makeViewer() {
         const text = room.planned ? `${room.name} · 规划` : room.name;
         label({ x: (x1 + x2) / 2, y: 0.29, z: z1 * 0.47 + z2 * 0.53, track: model.building[state.floor].layer }, text, room.planned ? 'planned' : '');
       }
-    } else if (state.floor === 'yard' && state.phase === 'proposal') {
+    } else if (state.floor === 'yard') {
       label({ x: -2.36, y: 2.46, z: -4.5 }, '户外厨房');
       label({ x: 10.52, y: 0.74, z: -4.52 }, '塑木平台');
       label({ x: 4.2, y: 0.25, z: -3.65 }, '北花园');
@@ -405,8 +405,6 @@ function makeViewer() {
     const detailed = stage.dataset.model === 'photo';
     grid.visible = !detailed || state.mode === 'plan';
     if (detailed) sun.shadow.intensity = state.mode === 'plan' ? 0.36 : 0.89;
-    model.proposal.visible = state.phase === 'proposal';
-    model.present.visible = state.phase === 'present';
     for (const [id, layer] of Object.entries(model.building)) {
       layer.layer.visible = !solo || id === state.floor;
       layer.cut.visible = solo || exploded;
@@ -618,7 +616,6 @@ function makeViewer() {
     stopMeasure();
     show({ reset: true });
   });
-  $('yard-phase').addEventListener('change', event => { state.phase = event.target.value; show(); });
   $('spacing').addEventListener('input', event => { state.spacing = Number(event.target.value); show(); resize(); });
   $('furniture-visibility').addEventListener('change', event => { state.furniture = event.target.checked; show(); });
   $('room-visibility').addEventListener('change', event => { state.labels = event.target.checked; show(); });

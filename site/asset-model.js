@@ -62,8 +62,8 @@ export async function loadAssetModel(onProgress, onDownloaded) {
   }));
   const roof = requireDescendant(root, 'Roof');
   const site = requireDescendant(root, 'Yard');
-  const proposal = requireDescendant(site, 'YardDesign');
-  const present = requireDescendant(site, 'YardExisting');
+  requireDescendant(site, 'YardDesign').visible = true;
+  site.getObjectByName('YardExisting')?.removeFromParent();
   const furniture = new Map();
   const tagged = Object.fromEntries(Object.entries(building).map(([id, { contents }]) => {
     const pivots = new Map();
@@ -87,7 +87,7 @@ export async function loadAssetModel(onProgress, onDownloaded) {
     object.castShadow = object.userData.castShadow;
     object.receiveShadow = object.userData.receiveShadow ?? opaque;
   });
-  return { root, building, roof, site, proposal, present, furniture };
+  return { root, building, roof, site, furniture };
 }
 
 export function makeDaylightEnvironment() {

@@ -130,7 +130,7 @@ h1 { font: 700 clamp(23px, 2.2vw, 32px)/1.1 var(--serif); letter-spacing: .055em
 .layer-list button[aria-pressed="true"] .floor-tag { background: var(--accent); border-color: var(--accent); color: white; }
 .field { display: flex; align-items: center; justify-content: space-between; gap: 9px; color: var(--soft); font-size: 13px; }
 select { min-height: 38px; min-width: 0; padding: 0 8px; background: var(--sheet); border: 1px solid #d8d5ca; border-radius: 7px; font-size: 13px; }
-.switches { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 10px; font-size: 13px; }
+.switches { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 13px; }
 .switches label { display: inline-flex; min-height: 32px; align-items: center; gap: 5px; cursor: pointer; }
 input[type="checkbox"], input[type="range"] { accent-color: var(--accent); }
 input[type="checkbox"] { width: 16px; height: 16px; margin: 0; }
