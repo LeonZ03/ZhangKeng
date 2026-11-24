@@ -7,6 +7,8 @@ import { floors, furnishings } from './plan.js';
 const $ = (id) => document.getElementById(id);
 const modeButtons = [...document.querySelectorAll('[data-mode]')];
 const floorButtons = [...document.querySelectorAll('[data-floor]')];
+const inspector = $('inspector');
+const phoneSettings = $('phone-settings');
 const items = new Map(furnishings.map(item => [item.id, item]));
 const storageKey = 'zhangkeng.furniture.v1';
 const state = {
@@ -15,6 +17,27 @@ const state = {
 };
 
 $('about-open').addEventListener('click', () => $('about').showModal());
+
+function connectPhoneSettings() {
+  const sidebarHost = inspector.parentElement;
+  const phoneViewport = matchMedia('(max-width: 730px), (pointer: coarse) and (max-height: 600px)');
+  function placeInspector() {
+    if (phoneViewport.matches) {
+      phoneSettings.append(inspector);
+    } else {
+      if (phoneSettings.open) phoneSettings.close();
+      sidebarHost.append(inspector);
+    }
+  }
+  phoneViewport.addEventListener('change', placeInspector);
+  $('phone-settings-open').addEventListener('click', () => phoneSettings.showModal());
+  phoneSettings.addEventListener('click', event => {
+    if (event.target === phoneSettings && event.clientY < phoneSettings.getBoundingClientRect().top) phoneSettings.close();
+  });
+  placeInspector();
+}
+
+connectPhoneSettings();
 
 function loadPlacements() {
   try {
@@ -41,6 +64,8 @@ function clampPlacement(item, x, z, angle) {
 function makeViewer() {
   const scene = new THREE.Scene();
   const stage = $('stage');
+  const surface = $('viewer-surface');
+  const viewport = $('viewport');
   const modelView = $('model-view');
   const loadingPanel = $('model-loading');
   const loadingStatus = $('loading-status');
@@ -49,11 +74,9 @@ function makeViewer() {
   const modelNote = $('model-note');
   const modelRetry = $('model-retry');
   const modelControls = document.querySelectorAll('[data-model-controls]');
-  const inspector = document.querySelector('.inspector');
   const exploreButton = document.querySelector('[data-mode="explore"]');
   const mobile = matchMedia('(pointer: coarse)').matches;
   const elementary = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-  elementary.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.35 : 1.65));
   elementary.shadowMap.enabled = true;
   elementary.shadowMap.type = THREE.PCFSoftShadowMap;
   elementary.shadowMap.autoUpdate = false;
@@ -61,7 +84,7 @@ function makeViewer() {
   elementary.toneMappingExposure = 1.16;
   const canvas = elementary.domElement;
   canvas.setAttribute('aria-label', '可旋转、缩放和切换楼层的郑家大院三维模型');
-  $('viewport').append(canvas);
+  viewport.prepend(canvas);
 
   const camera = new THREE.OrthographicCamera(-12, 12, 9, -9, 0.1, 180);
   const controls = new OrbitControls(camera, canvas);
@@ -119,7 +142,7 @@ function makeViewer() {
   let showingStage = false;
   let pendingAsset;
   let surveyMode = 'exterior';
-  const explorer = createExplorer({ canvas, stage, requestFrame, exit: exitExploration });
+  const explorer = createExplorer({ canvas, requestFrame, exit: exitExploration });
 
   for (const item of furnishings) {
     const option = new Option(`${floors[item.floor].tag} · ${item.room} · ${item.name}`, item.id);
@@ -228,18 +251,25 @@ function makeViewer() {
   }
 
   function resize() {
-    width = Math.max(1, $('stage').clientWidth);
-    height = Math.max(1, $('stage').clientHeight);
-    const aspect = width / height;
+    width = Math.max(1, surface.clientWidth);
+    height = Math.max(1, surface.clientHeight);
+    const frame = stage.getBoundingClientRect();
     const exterior = state.mode === 'exterior';
     const explode = state.mode === 'exploded';
     const courtyard = state.floor === 'yard';
     const minWidth = exterior || explode || courtyard ? 26.2 : state.mode === 'plan' ? 14.8 : 16.2;
     const minHeight = explode ? 21.7 + (state.spacing - 2.6) * 1.45 : exterior || courtyard ? 18.4 : 12.3;
-    const half = Math.max(minWidth / aspect, minHeight) / 2;
-    Object.assign(camera, { left: -half * aspect, right: half * aspect, top: half, bottom: -half });
-    camera.updateProjectionMatrix();
-    explorer.resize(aspect);
+    const unitsPerPixel = Math.max(minWidth / Math.max(1, frame.width), minHeight / Math.max(1, frame.height));
+    const halfWidth = width * unitsPerPixel / 2;
+    const halfHeight = height * unitsPerPixel / 2;
+    Object.assign(camera, { left: -halfWidth, right: halfWidth, top: halfHeight, bottom: -halfHeight });
+    // Keep the default composition between the controls while projecting to the entire window.
+    camera.setViewOffset(width, height, width / 2 - frame.left - frame.width / 2,
+      height / 2 - frame.top - frame.height / 2, width, height);
+    explorer.resize(width / height);
+    const pixelLimit = mobile ? 2_000_000 : 5_000_000;
+    const density = Math.min(window.devicePixelRatio, mobile ? 1.35 : 1.65, Math.sqrt(pixelLimit / (width * height)));
+    if (elementary.getPixelRatio() !== density) elementary.setPixelRatio(density);
     elementary.setSize(width, height, false);
     renderSoon();
   }
@@ -282,6 +312,7 @@ function makeViewer() {
     const loading = mode === 'loading';
     stage.dataset.model = mode;
     loadingPanel.hidden = !loading;
+    viewport.hidden = loading;
     modelView.hidden = loading;
     modelView.setAttribute('aria-busy', String(loading));
     modelNote.textContent = message;
@@ -408,7 +439,7 @@ function makeViewer() {
     floorButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.floor === state.floor)));
     $('measure').setAttribute('aria-pressed', String(state.measuring));
     $('measure').disabled = exploring;
-    $('stage').classList.toggle('measuring', state.measuring);
+    canvas.classList.toggle('measuring', state.measuring);
     stage.classList.toggle('exploring', exploring);
     inspector.inert = exploring || stage.dataset.model === 'loading';
     $('furniture-visibility').checked = state.furniture;
@@ -522,7 +553,7 @@ function makeViewer() {
     Object.assign(gesture, { dx: placement.x - point.x, dz: placement.z - point.z, angle: placement.angle });
     controls.enabled = false;
     canvas.setPointerCapture(event.pointerId);
-    $('stage').classList.add('dragging');
+    canvas.classList.add('dragging');
   }, true);
 
   canvas.addEventListener('pointermove', event => {
@@ -544,14 +575,16 @@ function makeViewer() {
     gesture = undefined;
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     controls.enabled = true;
-    $('stage').classList.remove('dragging');
+    canvas.classList.remove('dragging');
     if (pendingAsset) renderSoon();
   }
 
   canvas.addEventListener('pointerup', endGesture);
   canvas.addEventListener('pointercancel', endGesture);
   controls.addEventListener('change', () => renderSoon());
-  new ResizeObserver(resize).observe($('stage'));
+  const sizing = new ResizeObserver(resize);
+  sizing.observe(stage);
+  sizing.observe(surface);
 
   function switchMode(mode, restoreSurvey = false) {
     const previous = state.mode;
@@ -580,6 +613,7 @@ function makeViewer() {
 
   for (const button of modeButtons) button.addEventListener('click', () => switchMode(button.dataset.mode));
   for (const button of floorButtons) button.addEventListener('click', () => {
+    if (phoneSettings.open) phoneSettings.close();
     state.floor = button.dataset.floor;
     state.mode = state.mode === 'plan' ? 'plan' : 'cut';
     state.item = '';
@@ -628,7 +662,7 @@ function makeViewer() {
     renderSoon(true);
   });
   window.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || event.defaultPrevented || state.mode === 'explore' || $('about').open) return;
+    if (event.key !== 'Escape' || event.defaultPrevented || state.mode === 'explore' || document.querySelector('dialog[open]')) return;
     if (state.measuring) { stopMeasure(); show(); }
     else if (state.item) select('');
   });
@@ -655,6 +689,7 @@ try {
   console.error(error);
   $('stage').dataset.model = 'unavailable';
   $('model-loading').hidden = true;
+  $('viewport').hidden = true;
   $('model-view').hidden = true;
   $('model-view').removeAttribute('aria-busy');
   $('view-error').textContent = '三维模型暂时无法打开。请启用浏览器的 WebGL 2 和硬件加速，再刷新页面。';

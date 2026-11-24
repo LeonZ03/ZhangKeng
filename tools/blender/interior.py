@@ -153,10 +153,65 @@ def sofa(g, parent, item):
         back = g.box(parent, 'Loose back cushion', 'sofa', (x, d / 2 - .173, .636), (span - .015, .165, .361), .071)
         back.rotation_euler.x = -.14
     for index, x in enumerate(([-w * .29, w * .28] if seats > 1 else [0])):
-        pillow = g.box(parent, 'Textured throw cushion', 'sage' if index % 2 == 0 else 'umber',
-                       (x, d / 2 - .287, .602), (.32, .139, .315), .063)
+        pillow = soft_pillow(g, parent, x, d / 2 - .287, .602,
+                             'sage' if index % 2 == 0 else 'umber')
         pillow.rotation_euler.x = -.29
         pillow.rotation_euler.y = .16 * (-1 if index == 0 else 1)
+
+
+def soft_pillow(g, parent, x, y, z, color):
+    """Low resolution sewn pillow with domed faces, pinched corners and welt."""
+    steps, width, height, thickness = 10, .32, .315, .139
+    vertices, faces, uv = [], [], []
+    # Two 11 x 11 face grids; the boundary is gently pulled toward the center
+    # at each corner, while the center fullness gives the fabric a soft crown.
+    for side in (-1, 1):
+        for row in range(steps + 1):
+            v = row / steps * 2 - 1
+            for col in range(steps + 1):
+                u = col / steps * 2 - 1
+                corner = abs(u * v) ** 5
+                px = u * width * .5 * (1 - .055 * corner)
+                pz = v * height * .5 * (1 - .055 * corner)
+                edge = max(abs(u), abs(v))
+                crown = .047 * max(0, 1 - u * u) ** .55 * max(0, 1 - v * v) ** .55
+                pinch = .012 * corner * edge
+                py = side * (thickness * .5 + crown - pinch)
+                vertices.append((px, py, pz))
+    stride = (steps + 1) ** 2
+    for side in range(2):
+        base = side * stride
+        for row in range(steps):
+            for col in range(steps):
+                a = base + row * (steps + 1) + col
+                quad = (a, a + 1, a + steps + 2, a + steps + 1)
+                faces.append(quad if side == 0 else tuple(reversed(quad)))
+                uv.append([(col / steps, row / steps), ((col + 1) / steps, row / steps),
+                           ((col + 1) / steps, (row + 1) / steps), (col / steps, (row + 1) / steps)])
+    # Close the perimeter with one quad per edge segment.
+    boundary = [(0, i) for i in range(steps + 1)]
+    boundary += [(i, steps) for i in range(1, steps + 1)]
+    boundary += [(steps, i) for i in range(steps - 1, -1, -1)]
+    boundary += [(i, 0) for i in range(steps - 1, 0, -1)]
+    for index, (row, col) in enumerate(boundary):
+        nr, nc = boundary[(index + 1) % len(boundary)]
+        a = row * (steps + 1) + col
+        b = nr * (steps + 1) + nc
+        faces.append((a, b, stride + b, stride + a))
+        uv.append([(col / steps, row / steps), (nc / steps, nr / steps),
+                   (nc / steps, nr / steps), (col / steps, row / steps)])
+    pillow = g.group(parent, 'Soft tailored throw pillow', (x, y, z))
+    g.mesh(pillow, 'Pillow domed textile shell', vertices, faces, color,
+           uv=uv, smooth=True)
+    seam = []
+    for row, col in boundary:
+        u, v = col / steps * 2 - 1, row / steps * 2 - 1
+        corner = abs(u * v) ** 5
+        seam.append((u * width * .5 * (1 - .055 * corner),
+                     -thickness * .5 - .002,
+                     v * height * .5 * (1 - .055 * corner)))
+    g.tube(pillow, 'Pillow tailored welt', color, seam, .003, sides=6, closed=True)
+    return pillow
 
 
 def chair(g, parent, x, y, angle, tea=False):

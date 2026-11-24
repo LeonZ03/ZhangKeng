@@ -3,7 +3,7 @@
 import bpy
 from mathutils import Vector
 
-from exterior_garden import kitchen, kitchen_screen, planting, stones, trees
+from exterior_garden import kitchen, kitchen_screen, planting, shrubs, stones, trees
 from exterior_geometry import MeshBuilder, center_and_spans, descendants, long_axis
 from exterior_roof import refine_roof
 from exterior_surfaces import Surfaces, replace_surface, solid, uv_project
@@ -437,6 +437,7 @@ def refine(ctx):
                 uv_project(obj, (0.9, 0.9))
     stones(ctx.scene, proposal, stone, textures["footer"])
     planting(ctx.scene, proposal)
+    shrubs(ctx.scene, proposal)
     trees(ctx.scene, proposal, textures["bark"])
     kitchen(ctx.scene, proposal, stainless, fittings, textures["footer"])
     kitchen_screen(ctx.scene, proposal, textures["ashlar"], textures["trim"])

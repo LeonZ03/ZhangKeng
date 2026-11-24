@@ -128,10 +128,31 @@ def kitchen(g, parent):
     for y in [-1.676, -1.735]:
         g.lathe(node, 'Hob knob', 'graphite', (11.206, y, .966), [
             (0, 0), (.023, 0), (.023, .017), (.020, .019), (0, .019)], segments=20)
-    g.box(node, 'Fridge cabinet', 'sink', (8.721, -.414, .909), (.575, .605, 1.818), .025)
-    for z, h in [(.288, .533), (1.186, 1.237)]:
-        g.box(node, 'Fridge door', 'sink', (8.721, -.746, z), (.565, .078, h), .020)
-        g.box(node, 'Vertical fridge pull', 'graphite', (8.916, -.796, z + h * .24), (.031, .031, .170), .006)
+    # One insulated carcass carries two aligned, gasketed leaves. The low
+    # freezer and full-height fresh-food door retain the plan's existing
+    # footprint and 1.818 m overall height.
+    fridge = g.group(node, 'Modern two-zone refrigerator', (8.721, -.414, .909))
+    g.box(fridge, 'Continuous stainless refrigerator body', 'sink', (0, 0, 0),
+          (.575, .605, 1.818), .025)
+    g.box(fridge, 'Recessed refrigerator toe kick', 'graphite', (0, -.008, -.850),
+          (.535, .555, .112), .012)
+    # A dark seal is visible only in the narrow reveal around each leaf.
+    g.box(fridge, 'Freezer door gasket', 'graphite', (0, -.310, -.621),
+          (.554, .018, .512), .008)
+    g.box(fridge, 'Fresh food door gasket', 'graphite', (0, -.310, .277),
+          (.554, .018, 1.206), .008)
+    for name, center_z, height in [('Lower freezer door', -.621, .498),
+                                   ('Upper fresh food door', .277, 1.190)]:
+        g.box(fridge, name, 'sink', (0, -.337, center_z), (.562, .050, height), .016)
+    # The shallow dark channels and narrow metal lips read as integrated
+    # recessed pulls, avoiding the old projecting black bar handles.
+    for z, h in [(-.621, .178), (.277, .248)]:
+        g.box(fridge, 'Integrated vertical pull recess', 'graphite', (-.205, -.365, z),
+              (.030, .010, h), .012)
+        g.box(fridge, 'Brushed pull channel lip', 'sink', (-.184, -.369, z),
+              (.008, .008, h * .72), .004)
+    g.box(fridge, 'Horizontal freezer reveal', 'graphite', (0, -.365, -.355),
+          (.553, .006, .009), .003)
 
 
 def bedside(g, parent, x, z, table_only=False):

@@ -57,15 +57,93 @@ def planting(scene, parent):
     grass.object(scene, parent, "Fine courtyard turf blades", mat, tint=True)
 
 
+SHRUB_LEAF_OUTLINE = (
+    (-1, 0), (-.78, -.50), (-.43, -.87), (0, -1),
+    (.44, -.83), (.78, -.44), (1, 0), (.78, .44),
+    (.44, .83), (0, 1), (-.43, .87), (-.78, .50),
+)
+SHRUB_LEAF_FACES = tuple((i, (i + 1) % len(SHRUB_LEAF_OUTLINE), len(SHRUB_LEAF_OUTLINE))
+                         for i in range(len(SHRUB_LEAF_OUTLINE)))
+
+
 def leaf_mesh(builder, rng, center, length, tint):
-    pos = Vector(center)
-    length *= rng.uniform(0.65, 1.3)
+    half = length * rng.uniform(0.38, 0.59)
     theta = rng.uniform(0, 2 * pi)
-    long = Vector((cos(theta), sin(theta), rng.uniform(-0.58, 0.66))).normalized() * length
-    wide = Vector((-sin(theta), cos(theta), rng.uniform(-0.28, 0.28))).normalized() * length * 0.45
-    builder.patch([pos - long, pos - wide, pos + long, pos + wide,
-                   pos + Vector((0, 0, length * 0.24))],
-                  [(0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4)], color=tint)
+    along = Vector((cos(theta), sin(theta), rng.uniform(-0.58, 0.66))).normalized() * half
+    across = Vector((-sin(theta), cos(theta), rng.uniform(-0.28, 0.28))).normalized() * half * 0.50
+    normal = along.cross(across).normalized()
+    outline = [center + u * along + v * across for u, v in SHRUB_LEAF_OUTLINE]
+    builder.patch([*outline, center + normal * half * 0.18], SHRUB_LEAF_FACES, color=tint, smooth=True)
+
+
+def shrubs(scene, parent):
+    """Replace the six broad-leaf placeholders with low, branched garden shrubs."""
+    plants = [
+        (0.99, 5.80, 1.70), (6.70, 5.75, 1.80), (7.84, 5.60, 1.90),
+        (12.85, 3.23, 1.60), (2.47, 0.90, 1.40), (4.85, 1.24, 1.50),
+    ]
+    # The source garden has a cylindrical soil-colored stem and six oval leaves
+    # directly under YardDesign. Remove only those meshes around the known sites.
+    for obj in list(parent.children):
+        if obj.type != "MESH" or obj.get("source_material") not in {"soil", "plant"}:
+            continue
+        center = obj.matrix_world.translation
+        if any((center.x - x) ** 2 + (center.y - y) ** 2 < (0.48 * scale) ** 2 and
+               DATUM - 0.08 < center.z < DATUM + 1.18 * scale
+               for x, y, scale in plants):
+            bpy.data.objects.remove(obj, do_unlink=True)
+
+    branches, leaves = MeshBuilder(), MeshBuilder()
+    leafmat = solid("Courtyard shrub foliage", (82, 109, 54), 0.88, two_sided=True)
+    use_vertex_color(leafmat)
+    rng = Random(61583)
+    palette = [RGB(color) for color in (
+        (63, 83, 42), (78, 103, 48), (93, 119, 55),
+        (110, 132, 62), (128, 143, 72), (75, 96, 48),
+    )]
+    for index, (x, y, scale) in enumerate(plants):
+        base = Vector((x, y, DATUM + 0.10))
+        canopy_height = rng.uniform(0.45, 0.53) * scale
+        canopy_radius = rng.uniform(0.23, 0.26) * scale
+        # Several woody stems rise from the base and fork into an irregular,
+        # leafy crown. The silhouette stays within the old planting footprint.
+        for arm in range(8):
+            angle = arm * (2.39996 + index * 0.017) + rng.uniform(-0.18, 0.18)
+            radial = canopy_radius * rng.uniform(0.67, 1.0)
+            start = base + Vector((rng.uniform(-0.045, 0.045) * scale,
+                                   rng.uniform(-0.045, 0.045) * scale,
+                                   rng.uniform(0.04, 0.12) * scale))
+            joint = base + Vector((cos(angle) * radial * 0.43,
+                                   sin(angle) * radial * 0.43,
+                                   canopy_height * rng.uniform(0.43, 0.58)))
+            tip = base + Vector((cos(angle) * radial, sin(angle) * radial,
+                                 canopy_height * rng.uniform(0.78, 1.0)))
+            branches.branch(start, joint, 0.024 * scale, 0.014 * scale, sides=6)
+            branches.branch(joint, tip, 0.014 * scale, 0.004 * scale, sides=5)
+            for side in (-1, 1):
+                twig_angle = angle + side * rng.uniform(0.48, 0.78)
+                twig = joint.lerp(tip, rng.uniform(0.49, 0.72))
+                twig_tip = twig + Vector((cos(twig_angle) * radial * 0.31,
+                                          sin(twig_angle) * radial * 0.31,
+                                          canopy_height * rng.uniform(0.08, 0.20)))
+                branches.branch(twig, twig_tip, 0.008 * scale, 0.002 * scale, sides=5)
+                for _ in range(10):
+                    t = rng.uniform(0.42, 1.0)
+                    point = twig.lerp(twig_tip, t)
+                    point += Vector((rng.gauss(0, 0.035), rng.gauss(0, 0.035),
+                                     rng.gauss(0, 0.035))) * scale
+                    leaf_mesh(leaves, rng, point, rng.uniform(0.075, 0.10) * scale,
+                              rng.choice(palette))
+            for _ in range(9):
+                t = rng.uniform(0.62, 1.0)
+                point = joint.lerp(tip, t)
+                point += Vector((rng.gauss(0, 0.035), rng.gauss(0, 0.035),
+                                 rng.gauss(0, 0.035))) * scale
+                leaf_mesh(leaves, rng, point, rng.uniform(0.08, 0.10) * scale,
+                          rng.choice(palette))
+    bark = solid("Young shrub branch bark", (91, 76, 54), 0.94, 0.60)
+    branches.object(scene, parent, "Forked low courtyard shrub branches", bark)
+    leaves.object(scene, parent, "Layered low courtyard shrub leaves", leafmat, tint=True)
 
 
 def trees(scene, parent, bark):

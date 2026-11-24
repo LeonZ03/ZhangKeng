@@ -7,7 +7,7 @@ const movementKeys = new Map([
   ['ShiftLeft', 'faster'], ['ShiftRight', 'faster'],
 ]);
 
-export function createExplorer({ canvas, stage, requestFrame, exit }) {
+export function createExplorer({ canvas, requestFrame, exit }) {
   const camera = new THREE.PerspectiveCamera(69, 1, 0.008, 90);
   camera.rotation.order = 'YXZ';
   const hud = document.getElementById('explore-hud');
@@ -118,7 +118,7 @@ export function createExplorer({ canvas, stage, requestFrame, exit }) {
     const id = drag?.id;
     drag = undefined;
     if (id !== undefined && canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
-    stage.classList.remove('explore-looking');
+    canvas.classList.remove('explore-looking');
   }
 
   function clearInput() {
@@ -186,7 +186,7 @@ export function createExplorer({ canvas, stage, requestFrame, exit }) {
       wasDragged ||= Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 4;
       if (wasDragged) {
         aim = undefined;
-        stage.classList.add('explore-looking');
+        canvas.classList.add('explore-looking');
         look(event.clientX - drag.x, event.clientY - drag.y, 0.004);
       }
       drag.x = event.clientX;

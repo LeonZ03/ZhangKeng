@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f5f2ea">
   <meta name="description" content="郑家大院的三维模型、楼层剖切和家具布置参考。">
   <title>郑家大院 · 三维装修参考</title>
@@ -12,6 +12,11 @@
   <script type="module" src="./viewer.js"></script>
 </head>
 <body>
+  <div id="viewer-surface">
+    <div id="viewport" hidden>
+      <div class="labels" id="labels" aria-hidden="true"></div>
+    </div>
+  </div>
   <header class="masthead">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true"><i></i></span>
@@ -30,7 +35,10 @@
           <button type="button" data-mode="plan" aria-pressed="false">平面</button>
           <button type="button" data-mode="explore" aria-pressed="false" disabled>自由探索</button>
         </div>
-        <button type="button" class="outline-button measure" id="measure" aria-pressed="false">量尺寸</button>
+        <div class="view-actions">
+          <button type="button" class="outline-button measure" id="measure" aria-pressed="false">量尺寸</button>
+          <button type="button" class="outline-button" id="phone-settings-open" aria-haspopup="dialog" aria-controls="phone-settings">楼层与布置</button>
+        </div>
       </div>
 
       <div class="stage" id="stage" aria-label="三维模型视口" data-model="loading" data-packed-model="" data-packed-bytes="">
@@ -44,14 +52,12 @@
           </div>
         </div>
         <div id="model-view" aria-busy="true" hidden>
-          <div id="viewport"></div>
           <div class="view-caption">
             <span class="scene-index" id="scene-index">整栋</span>
             <p id="scene-text">主屋与庭院</p>
             <span id="model-note" class="model-note" role="status"></span>
             <button type="button" class="outline-button model-retry" id="model-retry" hidden>重试写实模型</button>
           </div>
-          <div class="labels" id="labels" aria-hidden="true"></div>
           <div class="compass" aria-hidden="true"><span>北</span><i id="north-arrow"></i></div>
           <div class="camera-controls" role="group" aria-label="相机控制" data-model-controls inert>
             <button type="button" id="zoom-in" title="放大" aria-label="放大">＋</button>
@@ -91,7 +97,7 @@
       </div>
     </section>
 
-    <aside class="inspector" aria-label="楼层和布置设置" data-model-controls inert>
+    <aside class="inspector" id="inspector" aria-label="楼层和布置设置" data-model-controls inert>
       <section class="inspector-section layers">
         <div class="section-heading"><h2>楼层</h2><span id="floor-elevation">±0.000</span></div>
         <div class="layer-list" role="group" aria-label="楼层">
@@ -130,6 +136,13 @@
       </section>
     </aside>
   </main>
+
+  <dialog id="phone-settings" aria-labelledby="phone-settings-title">
+    <div class="dialog-heading phone-settings-heading">
+      <h2 id="phone-settings-title">楼层与布置</h2>
+      <form method="dialog"><button type="submit" class="outline-button" autofocus>关闭</button></form>
+    </div>
+  </dialog>
 
   <dialog id="about">
     <div class="dialog-heading"><h2>图纸与尺寸</h2><form method="dialog"><button type="submit" class="outline-button">关闭</button></form></div>
