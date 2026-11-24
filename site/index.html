@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f2ea">
+  <meta name="description" content="张坑别墅的三维模型、楼层剖切和家具布置参考。">
+  <title>张坑别墅 · 三维装修参考</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+  <script type="module" src="./viewer.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><i></i></span>
+      <div><h1>张坑别墅</h1><p>三维装修参考</p></div>
+    </div>
+    <button class="outline-button" id="about-open" type="button">图纸与尺寸 <span aria-hidden="true">↗</span></button>
+  </header>
+
+  <main class="workbench">
+    <section class="view" aria-label="别墅查看器">
+      <div class="toolbar">
+        <div class="modes" role="group" aria-label="视图">
+          <button type="button" data-mode="exterior" aria-pressed="true">整栋</button>
+          <button type="button" data-mode="exploded" aria-pressed="false">逐层展开</button>
+          <button type="button" data-mode="cut" aria-pressed="false">单层剖切</button>
+          <button type="button" data-mode="plan" aria-pressed="false">平面</button>
+        </div>
+        <button type="button" class="outline-button measure" id="measure" aria-pressed="false">量尺寸</button>
+      </div>
+
+      <div class="stage" id="stage" aria-label="三维模型视口">
+        <div id="viewport"></div>
+        <div class="view-caption">
+          <span class="scene-index" id="scene-index">整栋</span>
+          <p id="scene-text">主屋与庭院</p>
+        </div>
+        <div class="labels" id="labels" aria-hidden="true"></div>
+        <div class="compass" aria-hidden="true"><span>北</span><i id="north-arrow"></i></div>
+        <div class="camera-controls" role="group" aria-label="相机控制">
+          <button type="button" id="zoom-in" title="放大" aria-label="放大">＋</button>
+          <button type="button" id="zoom-out" title="缩小" aria-label="缩小">−</button>
+          <button type="button" id="reset-view" title="复位视角" aria-label="复位视角">↺</button>
+        </div>
+        <div id="view-status" class="view-status" role="status" hidden></div>
+        <div id="view-error" class="view-error" hidden></div>
+      </div>
+      <div class="view-footer">
+        <p id="view-hint">拖动旋转 · 滚动缩放 · 右键拖动平移</p>
+        <p class="unit">米制模型 <span>1 m = 1 m</span></p>
+      </div>
+    </section>
+
+    <aside class="inspector" aria-label="楼层和布置设置">
+      <section class="inspector-section layers">
+        <div class="section-heading"><h2>楼层</h2><span id="floor-elevation">±0.000</span></div>
+        <div class="layer-list" role="group" aria-label="楼层">
+          <button type="button" data-floor="ground" aria-pressed="true"><span class="floor-tag">1F</span><span><b>一层</b><small>客餐厅与卧室</small></span><i aria-hidden="true">›</i></button>
+          <button type="button" data-floor="upper" aria-pressed="false"><span class="floor-tag">2F</span><span><b>二层</b><small>茶室与阳台</small></span><i aria-hidden="true">›</i></button>
+          <button type="button" data-floor="roof" aria-pressed="false"><span class="floor-tag">屋面</span><span><b>屋顶</b><small>十字坡屋面</small></span><i aria-hidden="true">›</i></button>
+          <button type="button" data-floor="yard" aria-pressed="false"><span class="floor-tag">室外</span><span><b>庭院</b><small>花园与室外厨房</small></span><i aria-hidden="true">›</i></button>
+        </div>
+      </section>
+
+      <section class="inspector-section display-options">
+        <div class="section-heading"><h2>显示设置</h2></div>
+        <label class="field" for="yard-phase"><span>庭院</span><select id="yard-phase"><option value="proposal">施工方案</option><option value="present">施工阶段示意</option></select></label>
+        <div class="switches">
+          <label><input id="furniture-visibility" type="checkbox" checked>家具</label>
+          <label><input id="room-visibility" type="checkbox" checked>房间标注</label>
+        </div>
+        <label class="field spacing" id="spacing-field" for="spacing" hidden><span>层间距</span><input id="spacing" type="range" min="1.8" max="4.2" step="0.1" value="2.6"><output id="spacing-value" for="spacing">2.6 m</output></label>
+      </section>
+
+      <section class="inspector-section layout-options" id="layout-options">
+        <div class="section-heading"><h2>家具布置</h2><button type="button" class="text-button" id="reset-layout" disabled>恢复图纸</button></div>
+        <label class="visually-hidden" for="item-select">选择家具</label>
+        <select id="item-select" class="item-select"><option value="">选择一件家具</option></select>
+        <p class="layout-note" id="layout-note">选择后可在单层或平面视图中拖动。调整保存在本机浏览器。</p>
+        <div id="item-editor" hidden>
+          <p class="item-detail" id="item-detail"></p>
+          <div class="item-controls" role="group" aria-label="移动家具 10 厘米或旋转 90 度">
+            <button class="outline-button" type="button" data-nudge="north" aria-label="向北移动10厘米">↑</button>
+            <button class="outline-button" type="button" data-nudge="west" aria-label="向西移动10厘米">←</button>
+            <button class="outline-button" type="button" data-nudge="south" aria-label="向南移动10厘米">↓</button>
+            <button class="outline-button" type="button" data-nudge="east" aria-label="向东移动10厘米">→</button>
+            <button class="outline-button rotate" type="button" id="rotate-item">旋转 90°</button>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="about">
+    <div class="dialog-heading"><h2>图纸与尺寸</h2><form method="dialog"><button type="submit" class="outline-button">关闭</button></form></div>
+    <dl class="source-stats"><div><dt>东西主轴</dt><dd>11.80 m</dd></div><div><dt>二层标高</dt><dd>+3.300 m</dd></div><div><dt>主屋外包</dt><dd>12.00 × 9.20 m</dd></div></dl>
+    <ul class="source-notes">
+      <li>建筑平面按 2026 年 4 月设计方案的两张 1:50 图定位。轴距为 3.50 / 4.80 / 3.50 m，二层西北和东侧按原图留空。</li>
+      <li>庭院依据施工图第 14–19 页定位。庭院标高按入户台阶对齐至建筑标高。</li>
+      <li>现场照片用于复原门窗外观、木梯、玻璃护栏及十字坡屋面。檐口与屋脊高度为照片估算。</li>
+      <li>家具根据图示位置和比例还原。家具规格、饰面与局部标高需在采购和施工前复尺。</li>
+    </ul>
+  </dialog>
+</body>
+</html>

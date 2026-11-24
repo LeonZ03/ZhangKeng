@@ -1,0 +1,11 @@
+{
+  "name": "zhangkeng-villa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node tools/serve.mjs",
+    "build:pages": "node tools/build-pages.mjs",
+    "preview": "node tools/serve.mjs dist"
+  }
+}

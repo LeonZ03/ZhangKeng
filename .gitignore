@@ -1,0 +1,7 @@
+references/
+.work/
+node_modules/
+dist/
+.wrangler/
+.env*
+*.blend1
