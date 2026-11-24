@@ -164,5 +164,18 @@
       </div>
     </div>
   </dialog>
+  <script>
+    const drawingsDialog = document.getElementById('about');
+    const drawingZoom = document.getElementById('drawing-zoom');
+    document.getElementById('about-open').addEventListener('click', () => drawingsDialog.showModal());
+    drawingZoom.addEventListener('click', () => {
+      const zoomed = drawingZoom.getAttribute('aria-pressed') === 'true';
+      drawingZoom.setAttribute('aria-pressed', String(!zoomed));
+    });
+    drawingsDialog.addEventListener('close', () => {
+      drawingZoom.setAttribute('aria-pressed', 'false');
+      document.getElementById('drawing-scroll').scrollTo(0, 0);
+    });
+  </script>
 </body>
 </html>

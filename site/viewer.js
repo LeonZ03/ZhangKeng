@@ -16,18 +16,6 @@ const state = {
   furniture: true, labels: true, item: '', measuring: false,
 };
 
-const drawingsDialog = $('about');
-const drawingZoom = $('drawing-zoom');
-$('about-open').addEventListener('click', () => drawingsDialog.showModal());
-drawingZoom.addEventListener('click', () => {
-  const zoomed = drawingZoom.getAttribute('aria-pressed') === 'true';
-  drawingZoom.setAttribute('aria-pressed', String(!zoomed));
-});
-drawingsDialog.addEventListener('close', () => {
-  drawingZoom.setAttribute('aria-pressed', 'false');
-  $('drawing-scroll').scrollTo(0, 0);
-});
-
 function connectPhoneSettings() {
   const sidebarHost = inspector.parentElement;
   const phoneViewport = matchMedia('(max-width: 730px), (pointer: coarse) and (max-height: 600px)');
