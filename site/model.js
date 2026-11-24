@@ -14,6 +14,9 @@ const groundOutline = [
   [-0.1, -0.1], [11.9, -0.1], [11.9, 9.1], [8.2, 9.1],
   [8.2, 7.9], [3.6, 7.9], [3.6, 9.1], [-0.1, 9.1],
 ];
+const balconyEdge = 10;
+const balconyFasciaDepth = 0.23;
+const balconyFasciaBack = balconyEdge - balconyFasciaDepth;
 
 function axisBox(parent, material, wall, begin, end, low, high, depth, offset = 0) {
   if (end - begin < 0.002 || high - low < 0.002) return;
@@ -37,6 +40,23 @@ function wallPanel(parent, wall, material, begin, end, low, highA, highB) {
   }
 }
 
+function wallBandFaces(parent, wall, begin, end, low, high) {
+  if (end - begin < 0.002 || high - low < 0.002) return;
+  const geometry = new THREE.PlaneGeometry(end - begin, high - low);
+  for (const side of [-1, 1]) {
+    const mesh = addMesh(parent, geometry, mats.trim);
+    const along = (begin + end) / 2, y = (low + high) / 2;
+    const across = wall.position + side * (wall.thickness / 2 + 0.002);
+    if (wall.axis === 'x') {
+      mesh.position.set(along, y, across);
+      mesh.rotation.y = side > 0 ? 0 : Math.PI;
+    } else {
+      mesh.position.set(across, y, along);
+      mesh.rotation.y = side * Math.PI / 2;
+    }
+  }
+}
+
 function frameOpening(parent, wall, opening, clip) {
   const { start, width, height, sill, type } = opening;
   const end = start + width;
@@ -46,26 +66,35 @@ function frameOpening(parent, wall, opening, clip) {
   const frame = clear || wall.exterior ? mats.frame : mats.wood;
   const fw = type === 'slide' ? 0.059 : 0.047;
   const thickness = type === 'window' ? 0.082 : 0.104;
+  const hasHead = top === sill + height;
+  const innerBottom = clear ? sill + fw : sill;
+  const innerTop = hasHead ? top - fw : top;
   if (wall.exterior) {
     const edge = wall.thickness + 0.029;
-    axisBox(parent, mats.trim, wall, start - 0.065, start, sill, top, edge);
-    axisBox(parent, mats.trim, wall, end, end + 0.065, sill, top, edge);
-    if (top === sill + height) axisBox(parent, mats.trim, wall, start - 0.065, end + 0.065, top, top + 0.058, edge);
-    if (sill > 0) axisBox(parent, mats.sill, wall, start - 0.064, end + 0.064, sill - 0.049, sill + 0.002, edge + 0.09);
+    // The stone reveals sit slightly in front of the cut masonry edge.
+    axisBox(parent, mats.trim, wall, start - 0.065, start + 0.003, sill, top, edge);
+    axisBox(parent, mats.trim, wall, end - 0.003, end + 0.065, sill, top, edge);
+    if (hasHead) axisBox(parent, mats.trim, wall, start - 0.065, end + 0.065, top, top + 0.058, edge);
+    if (sill > 0) axisBox(parent, mats.sill, wall, start - 0.064, end + 0.064, sill - 0.049, sill, edge + 0.09);
   }
-  axisBox(parent, frame, wall, start, start + fw, sill, top, thickness);
-  axisBox(parent, frame, wall, end - fw, end, sill, top, thickness);
-  if (top === sill + height) axisBox(parent, frame, wall, start, end, top - fw, top, thickness);
+  axisBox(parent, frame, wall, start, start + fw, innerBottom, innerTop, thickness);
+  axisBox(parent, frame, wall, end - fw, end, innerBottom, innerTop, thickness);
+  if (hasHead) axisBox(parent, frame, wall, start, end, innerTop, top, thickness);
   if (clear) {
-    axisBox(parent, frame, wall, start, end, sill, sill + fw, thickness);
+    axisBox(parent, frame, wall, start, end, sill, innerBottom, thickness);
     if (width > 1.2) {
-      const middle = start + width / 2;
-      axisBox(parent, frame, wall, middle - fw / 3, middle + fw / 3, sill, top, thickness);
+      const split = type === 'window' && wall.exterior && wall.position !== 0 ? 0.67 : 0.5;
+      const middle = start + width * split;
+      const left = middle - fw / 3, right = middle + fw / 3;
+      axisBox(parent, frame, wall, left, right, innerBottom, innerTop, thickness);
+      if (type === 'window' && top - sill > 1.1) {
+        const barTop = Math.min(sill + 1.066, innerTop);
+        const southFacade = wall.exterior && wall.axis === 'x' && wall.position > 0;
+        if (!southFacade) axisBox(parent, frame, wall, start + fw, left, sill + 1.03, barTop, thickness);
+        axisBox(parent, frame, wall, right, end - fw, sill + 1.03, barTop, thickness);
+      }
     }
-    if (type === 'window' && width > 1.2 && top - sill > 1.1) {
-      axisBox(parent, frame, wall, start, end, sill + 1.03, sill + 1.066, thickness);
-    }
-    const glass = axisBox(parent, mats.window, wall, start + fw, end - fw, sill + fw, top - 0.014, 0.021);
+    const glass = axisBox(parent, mats.window, wall, start + fw, end - fw, innerBottom, innerTop, 0.021);
     if (glass) glass.castShadow = false;
   } else if (type === 'door' && sill === 0 && clip < 2) {
     // The cut view keeps the door swing and the passage readable.
@@ -81,7 +110,7 @@ function frameOpening(parent, wall, opening, clip) {
 function walls(parent, floor, cut) {
   const slice = cut ? 0.95 : Infinity;
   for (const wall of floor.walls) {
-    const { start, end, height, openings, thickness, exterior } = wall;
+    const { start, end, height, openings, exterior } = wall;
     const ridge = height === 'gable' ? mainMid : height === 'cross' ? crossMid : null;
     const roofShape = height === 'gable' ? mainHeight : crossHeight;
     const shapeTop = u => ridge === null ? (height ?? floor.height) : roofShape(u) - upperElevation;
@@ -95,11 +124,10 @@ function walls(parent, floor, cut) {
       const opening = openings.find(o => (a + b) / 2 > o.start && (a + b) / 2 < o.start + o.width);
       const strips = opening ? [[0, opening.sill], [opening.sill + opening.height, Infinity]] : [[0, Infinity]];
       for (const [lo, hi] of strips) wallPanel(parent, wall, material, a, b, lo, Math.min(top(a), hi), Math.min(top(b), hi));
-      if (exterior && !cut) {
-        const accents = floor.elevation === 0 ? [0.38, 0.434, 1.17, 1.225, 2, 2.05, 2.82] : [0.34, 0.39, 1.18, 1.24, 2.1];
-        for (const y of accents) {
-          if (y >= Math.min(top(a), top(b)) || (opening && y >= opening.sill && y <= opening.sill + opening.height)) continue;
-          axisBox(parent, mats.trim, wall, a, b, y, y + 0.014, thickness + 0.004);
+      if (exterior && !cut && floor.elevation > 0) {
+        for (const y of [0.34, 0.39, 1.18, 1.24, 2.1]) {
+          if (opening && y < opening.sill + opening.height && y + 0.014 > opening.sill) continue;
+          wallBandFaces(parent, wall, a, b, y, Math.min(y + 0.014, top(a), top(b)));
         }
       }
     }
@@ -107,8 +135,9 @@ function walls(parent, floor, cut) {
   }
 }
 
-function groundPlinth(parent) {
-  const lip = 0.004;
+function groundWallTrim(parent) {
+  const bands = [[mats.footer, 0.002, 0.18, 0.004],
+    ...[0.38, 0.434, 1.17, 1.225, 2, 2.05, 2.82].map(y => [mats.trim, y, y + 0.014, 0.002])];
   const cornerOffsets = groundOutline.map((_, index, points) => {
     const [px, pz] = points.at(index - 1);
     const [nx, nz] = points[(index + 1) % points.length];
@@ -126,10 +155,6 @@ function groundPlinth(parent) {
     const wall = floors.ground.walls.find(w => w.exterior && w.axis === axis &&
       w.start < middle && w.end > middle &&
       Math.abs(w.position + outward * w.thickness / 2 - start[across]) < 0.001);
-    // At the doors, stop the band just before the jamb face.
-    const gaps = wall.openings.filter(o => o.sill <= 0.2)
-      .flatMap(o => [o.start - 0.002, o.start + o.width + 0.002]).sort((a, b) => a - b);
-    const ends = [low, ...gaps, high];
     const bandPoint = (coordinate, offset) => {
       // Both ends at a corner meet on the same miter across the wall thickness.
       if (coordinate === start[along]) return start.map((v, i) => v + offset * cornerOffsets[index][i]);
@@ -139,10 +164,17 @@ function groundPlinth(parent) {
       point[across] += offset * outward;
       return point;
     };
-    for (let i = 0; i < ends.length - 1; i += 2) {
-      const a = ends[i], b = ends[i + 1], inside = -wall.thickness - lip;
-      plate(parent, mats.footer, [bandPoint(a, lip), bandPoint(b, lip), bandPoint(b, inside), bandPoint(a, inside)],
-        0.18, 0.178);
+    for (const [material, bottom, top, lip] of bands) {
+      const gaps = wall.openings.filter(o => material === mats.footer ? o.sill <= 0.2 :
+        bottom < o.sill + o.height && top > o.sill)
+        .flatMap(o => [o.start - 0.002, o.start + o.width + 0.002]).sort((a, b) => a - b);
+      const ends = [low, ...gaps, high];
+      const inside = -wall.thickness - lip;
+      for (let i = 0; i < ends.length - 1; i += 2) {
+        const a = ends[i], b = ends[i + 1];
+        plate(parent, material, [bandPoint(a, lip), bandPoint(b, lip), bandPoint(b, inside), bandPoint(a, inside)],
+          top, top - bottom);
+      }
     }
   }
 }
@@ -151,14 +183,19 @@ function balcony(parent, cut) {
   const y = cut ? 0.52 : 1.04;
   for (const [axis, pos, a, b] of [['x', 9.9, 3.5, 8.3], ['z', 3.5, 7.9, 9.9], ['z', 8.3, 7.9, 9.9]]) {
     const rail = { axis, position: pos };
-    axisBox(parent, mats.frame, rail, a, b, y, y + 0.042, 0.052);
-    axisBox(parent, mats.sill, rail, a, b, 0.01, 0.085, 0.095);
+    // The front member spans both corners. The two side members butt into it.
+    const front = axis === 'x';
+    const piece = (mat, low, high, depth) => axisBox(parent, mat, rail, front ? a - depth / 2 : a,
+      b + (front ? depth / 2 : -depth / 2), low, high, depth);
+    piece(mats.frame, y, y + 0.042, 0.052);
+    piece(mats.sill, 0.01, 0.085, 0.095);
     const count = Math.ceil((b - a) / 0.96);
-    for (let i = 0; i <= count; i++) {
+    const posts = front ? count + 1 : count;
+    for (let i = 0; i < posts; i++) {
       const m = a + (b - a) * i / count;
       axisBox(parent, mats.steel, rail, m - 0.018, m + 0.018, 0.075, y, 0.035);
     }
-    const glazing = axisBox(parent, mats.window, rail, a, b, 0.085, y, 0.021);
+    const glazing = piece(mats.window, 0.085, y, 0.021);
     glazing.castShadow = false;
   }
 }
@@ -169,7 +206,8 @@ function stairs(parent) {
   for (let i = 0; i < 17; i++) {
     const elevation = bottom + (i + 1) * rise;
     const depth = i < 2 ? elevation - bottom : 0.067;
-    box(top, i < 2 ? mats.cement : mats.timber, -0.61, elevation - depth / 2, 7.85 - step * i, 1.02, depth, step + 0.012);
+    const treadDepth = i < 2 ? step : step + 0.012;
+    box(top, i < 2 ? mats.cement : mats.timber, -0.61, elevation - depth / 2, 7.85 - step * i, 1.02, depth, treadDepth);
     if (i >= 2) box(top, mats.wood, -0.61, elevation + 0.003, 7.85 - step * i, 1.01, 0.011, step + 0.013);
   }
   for (const x of [-1.095, -0.13]) beam(top, mats.oak, [x, 0.22, 7.63], [x, 3.17, 3.54], 0.098, 0.19);
@@ -179,7 +217,8 @@ function stairs(parent) {
 function floorSlabs(parent, id) {
   const shape = id === 'ground'
     ? groundOutline
-    : [[-0.1, -0.1], [11.9, -0.1], [11.9, 9.1], [8.4, 9.1], [8.4, 10], [3.4, 10], [3.4, 9.1], [-0.1, 9.1]];
+    : [[-0.1, -0.1], [11.9, -0.1], [11.9, 9.1], [8.4, 9.1], [8.4, balconyFasciaBack],
+      [3.4, balconyFasciaBack], [3.4, 9.1], [-0.1, 9.1]];
   plate(parent, mats.tile, shape, 0, id === 'ground' ? 0.18 : 0.22);
   for (const room of floors[id].rooms) {
     const [x1, z1, x2, z2] = room.bounds;
@@ -191,8 +230,23 @@ function floorSlabs(parent, id) {
     box(parent, mats.cement, 7.58, -0.084, -0.37, 1.55, 0.128, 0.62);
     box(parent, mats.stone, 7.58, -0.173, -0.78, 1.53, 0.126, 0.28);
   } else {
-    box(parent, mats.trim, 5.9, -0.11, 9.885, 5.01, 0.24, 0.23);
+    // The fascia occupies the slab's front section, so only stone reaches z = balconyEdge.
+    box(parent, mats.trim, 5.9, -0.11, balconyEdge - balconyFasciaDepth / 2, 5.01, 0.24, balconyFasciaDepth);
   }
+}
+
+function roofFascia(parent, axis, along, low, high, height) {
+  const width = 0.095;
+  const eave = height(low) - 0.11, ridge = height(high) - 0.11;
+  const halfHeight = 0.07 * Math.hypot(1, (ridge - eave) / (high - low));
+  // The matching profiles end on a common vertical cut at the ridge.
+  const profile = outline([[low, eave - halfHeight], [high, ridge - halfHeight],
+    [high, ridge + halfHeight], [low, eave + halfHeight]]);
+  const mesh = addMesh(parent, new THREE.ExtrudeGeometry(profile, { depth: width, bevelEnabled: false }), mats.timber);
+  if (axis === 'x') {
+    mesh.rotation.y = -Math.PI / 2;
+    mesh.position.x = along + width / 2;
+  } else mesh.position.z = along - width / 2;
 }
 
 function roofSheet(parent, axis, start, end, low, high, height, trim = true) {
@@ -240,9 +294,7 @@ function roofSheet(parent, axis, start, end, low, high, height, trim = true) {
   if (axis === 'x') boards.rotation.x = -slant;
   else boards.rotation.z = slant;
   if (!trim) return;
-  for (const at of [start, end]) {
-    beam(parent, mats.timber, across(at, low, height(low) - 0.11), across(at, high, height(high) - 0.11), 0.095, 0.14);
-  }
+  for (const at of [start, end]) roofFascia(parent, axis, at, low, high, height);
   beam(parent, mats.roofEdge, across(start, low, height(low) + 0.015), across(end, low, height(low) + 0.015), 0.13, 0.08);
   for (let at = start + 0.25; at < end - 0.1; at += 0.59) {
     const inside = low + Math.sign(high - low) * 0.62;
@@ -292,7 +344,7 @@ export function buildModel() {
     walls(cut, floor, true);
     if (id === 'upper') { balcony(full, false); balcony(cut, true); }
     if (id === 'ground') {
-      groundPlinth(full);
+      groundWallTrim(full);
       stairs(layer);
     }
     for (const [itemId, object] of buildFurniture(contents, id)) furniture.set(itemId, object);

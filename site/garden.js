@@ -18,21 +18,31 @@ function border() {
   return points;
 }
 
-function wallEdge(parent, a, b, material, y, h, thickness) {
-  const dx = b[0] - a[0], dz = b[1] - a[1];
-  const node = box(parent, material, (a[0] + b[0]) / 2, y, (a[1] + b[1]) / 2, Math.hypot(dx, dz) + 0.025, h, thickness);
-  node.rotation.y = Math.atan2(-dz, dx);
+function enclosureStrip(parent, path, material, top, height, width) {
+  const normals = path.slice(1).map(([x, z], i) => {
+    const dx = x - path[i][0], dz = z - path[i][1];
+    const length = Math.hypot(dx, dz);
+    return [dz / length, -dx / length];
+  });
+  const outside = [], inside = [];
+  for (const [i, [x, z]] of path.entries()) {
+    const [ax, az] = normals[Math.max(0, i - 1)];
+    const [bx, bz] = normals[Math.min(i, normals.length - 1)];
+    // Intersect the two offset sides at the corner instead of overlapping caps.
+    const scale = width / (2 * (1 + ax * bx + az * bz));
+    const dx = (ax + bx) * scale, dz = (az + bz) * scale;
+    outside.push([x + dx, z + dz]);
+    inside.push([x - dx, z - dz]);
+  }
+  plate(parent, material, [...outside, ...inside.reverse()], top, height);
 }
 
 function enclosure(parent, points, built) {
   const height = built ? 0.38 : 0.53;
-  const segments = points.slice(1).map((b, i) => [points[i], b]);
-  segments.push([points.at(-1), [west, 10.62]], [[west, 9.13], points[0]]);
-  for (const [a, b] of segments) {
-    wallEdge(parent, a, b, built ? mats.brick : mats.rock, datum + height / 2, height, 0.24);
-    if (!built) wallEdge(parent, a, b, mats.sill, datum + height, 0.065, 0.30);
-  }
+  const path = [[west, 9.13], ...points, [west, 10.62]];
+  enclosureStrip(parent, path, built ? mats.brick : mats.rock, datum + height, height, 0.24);
   if (built) return;
+  enclosureStrip(parent, path, mats.sill, datum + height + 0.0325, 0.065, 0.30);
   for (const z of [9.1, 10.65]) box(parent, mats.plaster, west, datum + 0.5, z, 0.33, 1, 0.33);
   for (let z = 9.28; z < 10.48; z += 0.11) box(parent, mats.steel, west, datum + 0.48, z, 0.047, 0.76, 0.035);
   for (const y of [datum + 0.18, datum + 0.85]) box(parent, mats.frame, west, y, 9.875, 0.064, 0.043, 1.24);
@@ -67,7 +77,7 @@ function cookingShelter(parent) {
   for (let x = -0.99; x <= 1.04; x += 0.202) {
     box(node, mats.sill, x, 1.29, -1.58, 0.06, 0.43, 0.19);
   }
-  for (const y of [1.07, 1.28, 1.5]) box(node, mats.sill, 0, y, -1.58, 2.02, 0.046, 0.19);
+  for (const y of [1.07, 1.28, 1.5]) box(node, mats.sill, 0, y, -1.58, 2.02, 0.046, 0.18);
   box(node, mats.rock, 0, 0.48, -1.16, 2.83, 0.88, 0.56);
   box(node, mats.stone, 0, 0.955, -1.16, 2.89, 0.075, 0.62);
   box(node, mats.steel, 0.77, 1.0, -1.16, 0.6, 0.03, 0.38);
@@ -80,9 +90,11 @@ function cookingShelter(parent) {
 
 function terrace(parent) {
   const node = group(parent, '东北塑木平台', 10.54, datum + 0.15, -4.52);
-  box(node, mats.oak, 0, -0.074, 0, 3.115, 0.148, 3.62);
+  const plankCenter = -0.006, plankHeight = 0.025;
+  const baseBottom = -0.148, baseTop = plankCenter - plankHeight / 2;
+  box(node, mats.oak, 0, (baseTop + baseBottom) / 2, 0, 3.115, baseTop - baseBottom, 3.62);
   for (let x = -1.49; x < 1.52; x += 0.132) {
-    box(node, mats.wood, x, -0.006, 0, 0.127, 0.025, 3.62);
+    box(node, mats.wood, x, plankCenter, 0, 0.127, plankHeight, 3.62);
   }
   post(node, mats.oak, 0, 0.7, 0.025, 0.52, 0.059);
   post(node, mats.frame, 0, 0.343, 0.025, 0.07, 0.686);
@@ -98,13 +110,16 @@ function paving(parent) {
   const stoneColors = ['#a7a089', '#c3b18e', '#bfb19a', '#c8ba9f', '#b5ad9b'];
   const slabs = stoneColors.map(color => new THREE.MeshStandardMaterial({ color, roughness: 0.9 }));
   const paths = [
-    [rect(-3.73, -0.1, -0.11, 11.65), 0.12],
+    [rect(-3.73, -0.1, -0.13, 11.65), 0.12],
     [rect(11.91, -0.12, 13.51, 11.65), 0.12],
     [rect(-0.13, 9.13, 11.91, 11.68), 0.12],
-    [rect(-0.76, -6.2, 0.64, -2.98), 0],
-    [[[0.23, -3.6], [3.2, -3.6], [3.2, -2.98], [5.37, -2.98], [5.37, -3.83], [8.12, -3.83], [8.12, -5.17], [8.92, -5.17], [8.92, -1.4], [6.36, -1.4], [6.36, -1.9], [3.16, -1.9], [3.16, -2.38], [0.23, -2.38]], 0],
+    // The three flat rear paths share one outline at their junctions.
+    [[[-0.76, -6.2], [0.64, -6.2], [0.64, -3.6], [3.2, -3.6], [3.2, -2.98],
+      [5.37, -2.98], [5.37, -3.83], [8.12, -3.83], [8.12, -5.17], [8.92, -5.17],
+      [8.92, -2.43], [13.54, -2.43], [13.54, -0.12], [8.45, -0.12], [8.45, -1.4],
+      [6.36, -1.4], [6.36, -1.9], [3.16, -1.9], [3.16, -2.38], [0.23, -2.38],
+      [0.23, -2.98], [-0.76, -2.98]], 0],
     [rect(6.7, -1.69, 8.14, 0), 0.12],
-    [rect(8.45, -2.43, 13.54, -0.12), 0],
   ];
   for (const [poly, height] of paths) plate(pavingSurface, mats.paving, poly, datum + height, 0.075);
   for (const [x1, z1, x2, z2, y] of [[-3.73, 0, -0.13, 11.61, 0.122], [11.93, 0, 13.52, 11.61, 0.122], [-0.13, 9.12, 11.93, 11.65, 0.122], [8.58, -2.4, 13.5, -0.13, 0.002]]) {

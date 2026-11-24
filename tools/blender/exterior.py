@@ -1,7 +1,6 @@
 """Exterior finishes and geometry for the measured Zhangkeng villa."""
 
 import bpy
-from mathutils import Vector
 
 from exterior_garden import kitchen, kitchen_screen, planting, shrubs, stones, trees
 from exterior_geometry import MeshBuilder, center_and_spans, descendants, long_axis
@@ -58,9 +57,9 @@ def exterior_opening(wall, opening, builder, glass, fittings, frame):
         pane = [locate(a, low, 0.013), locate(b, low, 0.013), locate(b, high, 0.013),
                 locate(a, high, 0.013)]
         glass.face(pane)
-        for u in [a + 0.003, b - 0.003]:
-            strip(frame, u, (low + high) / 2, 0.010, high - low, depth=0.051)
-        for v in [low + 0.004, high - 0.004]:
+        for u in [a + 0.005, b - 0.005]:
+            strip(frame, u, (low + high) / 2, 0.010, high - low - 0.020, depth=0.051)
+        for v in [low + 0.005, high - 0.005]:
             strip(frame, (a + b) / 2, v, b - a, 0.010, depth=0.051)
     if opening_type != "window" or width > 1.2:
         u = mul + 0.075 if width > 1.2 else start + width - 0.07
@@ -92,9 +91,9 @@ def openings(scene, root, walls, trim, frame, glass_mat, fittings_mat, oak):
                         (right, -wall['position'] + .015, high), (middle, -wall['position'] + .015, high),
                     ]
                     panes.face(pane_points)
-                    for u in [middle + .003, right - .003]:
-                        xwall_strip(gaskets, wall, u, (low + high) / 2, .010, high - low)
-                    for v in [low + .004, high - .004]:
+                    for u in [middle + .005, right - .005]:
+                        xwall_strip(gaskets, wall, u, (low + high) / 2, .010, high - low - .020)
+                    for v in [low + .005, high - .005]:
                         xwall_strip(gaskets, wall, (middle + right) / 2, v, right - middle, .010)
                     pivot = bpy.data.objects.new('可操作二层南阳台推拉玻璃门', None)
                     root.users_collection[0].objects.link(pivot)
@@ -108,7 +107,7 @@ def openings(scene, root, walls, trim, frame, glass_mat, fittings_mat, oak):
                     depth_frame = .046
                     depth_glass = .014
                     for u in [x0 + .027, x1 - .027]:
-                        frame_builder.box((u, depth_frame, (low + high) / 2), (.054, .057, high - low), bevel=.003)
+                        frame_builder.box((u, depth_frame, (low + high) / 2), (.054, .057, high - low - .108), bevel=.003)
                     for z in [low + .027, high - .027]:
                         frame_builder.box(((x0 + x1) / 2, depth_frame, z), (x1 - x0, .057, .054), bevel=.003)
                     glass_builder.face([(x0 + .054, depth_glass, low + .054),
@@ -119,8 +118,8 @@ def openings(scene, root, walls, trim, frame, glass_mat, fittings_mat, oak):
                     frame_builder.object(scene, pivot, 'Balcony sliding leaf frame and pull', frame)
                     glass_builder.object(scene, pivot, 'Balcony sliding leaf safety glass', glass_mat)
                     # Fixed surround remains fully static in its original measured opening.
-                    xwall_strip(gaskets, wall, start + fw / 2, (low + high) / 2, fw, high - low)
-                    xwall_strip(gaskets, wall, start + width - fw / 2, (low + high) / 2, fw, high - low)
+                    xwall_strip(gaskets, wall, start + fw / 2, (low + high) / 2, fw, high - low - 2 * fw)
+                    xwall_strip(gaskets, wall, start + width - fw / 2, (low + high) / 2, fw, high - low - 2 * fw)
                     xwall_strip(gaskets, wall, start + width / 2, low + fw / 2, width, fw)
                     xwall_strip(gaskets, wall, start + width / 2, high - fw / 2, width, fw)
                     continue
@@ -166,10 +165,12 @@ def openings(scene, root, walls, trim, frame, glass_mat, fittings_mat, oak):
                     pivot['exploreAmount'] = -1.15
                     leaf_frame, leaf_glass = MeshBuilder(), MeshBuilder()
                     # Local X follows the wall opening; the pivot sits on the north jamb.
-                    leaf_frame.box((-.006, -width / 2, top / 2), (.057, width, .043), bevel=.003)
+                    stile_bottom, header_bottom = .019, top - .0485
+                    leaf_frame.box((-.006, -width / 2, top / 2), (.057, width - .097, .043), bevel=.003)
                     leaf_frame.box((-.006, -width / 2, top - .027), (.057, width, .043), bevel=.003)
                     for u in [-.027, -width + .027]:
-                        leaf_frame.box((-.006, u, top / 2), (.057, .043, top - .038), bevel=.003)
+                        leaf_frame.box((-.006, u, (stile_bottom + header_bottom) / 2),
+                                       (.057, .043, header_bottom - stile_bottom), bevel=.003)
                     leaf_glass.face([(.006, -.05, .052), (.006, -width + .05, .052),
                                      (.006, -width + .05, top - .05), (.006, -.05, top - .05)])
                     leaf_frame.box((-.038, -width + .10, 1.02), (.018, .018, .15), bevel=.003)
@@ -241,12 +242,17 @@ def fit_cross_closure(obj, heights, include_main_roof=True):
 
 def slab_returns(scene, parent, plaster):
     returns = MeshBuilder()
+    side_depth = 0.011
+    west, east = -0.102, 11.902
+    north, south = 0.103, -9.102
+    side_length = north - south - side_depth
+    west_edge, east_edge = west - side_depth / 2, east + side_depth / 2
     for center, dimensions in [
-        ((-0.102, -4.50, -0.106), (0.011, 9.20, 0.225)),
-        ((11.902, -4.50, -0.106), (0.011, 9.20, 0.225)),
-        ((5.90, 0.103, -0.106), (12.00, 0.011, 0.225)),
-        ((1.65, -9.102, -0.106), (3.50, 0.011, 0.225)),
-        ((10.15, -9.102, -0.106), (3.50, 0.011, 0.225)),
+        ((west, (north + south) / 2, -0.106), (side_depth, side_length, 0.225)),
+        ((east, (north + south) / 2, -0.106), (side_depth, side_length, 0.225)),
+        (((west_edge + east_edge) / 2, north, -0.106), (east_edge - west_edge, side_depth, 0.225)),
+        (((west_edge + 3.4) / 2, south, -0.106), (3.4 - west_edge, side_depth, 0.225)),
+        (((8.4 + east_edge) / 2, south, -0.106), (east_edge - 8.4, side_depth, 0.225)),
     ]:
         returns.box(center, dimensions, uv_span=0.82)
     returns.object(scene, parent, "Stucco returns at the upper slab perimeter", plaster)
@@ -305,37 +311,6 @@ def refine_shell(scene, parent, walls, heights, textures, glass_mat, frame, seal
                 bpy.data.objects.remove(obj, do_unlink=True)
                 continue
             replace_surface(obj, glass_mat if material == "window" else frame)
-            if material != "frame" or railing:
-                continue
-            # Existing outer framing remains on the drawing's opening.
-            # Tall narrow members at the center are shifted to match the photographed jamb division.
-            for wall in walls:
-                if not wall["exterior"]:
-                    continue
-                axis_x = wall["axis"] == "x"
-                u = center.x if axis_x else -center.y
-                distance = -center.y if axis_x else center.x
-                if abs(distance - wall["position"]) >= 0.004:
-                    continue
-                for opening in wall["openings"]:
-                    start, width = opening["start"], opening["width"]
-                    if (opening["type"] != "window" or width <= 1.2 or
-                            abs(u - start - width / 2) >= 0.004):
-                        continue
-                    if (wall["position"] != 0 and size.z > 0.45 and size.x < 0.11 and size.y < 0.11
-                            and abs(center.z - level - opening["sill"] - opening["height"] / 2) < 0.03):
-                        offset = width * 0.17
-                        move = Vector((offset, 0, 0) if axis_x else (0, -offset, 0))
-                        obj.location += obj.parent.matrix_world.to_3x3().inverted_safe() @ move
-                    if (axis_x and wall["position"] > 0 and size.z < 0.05
-                            and abs(center.z - level - opening["sill"] - 1.048) < 0.007):
-                        factor = 0.33
-                        world_width_axis = Vector((1, 0, 0))
-                        basis = obj.matrix_world.to_3x3()
-                        local = max(range(3), key=lambda index: abs(basis.col[index].normalized().dot(world_width_axis)))
-                        obj.scale[local] *= factor
-                        obj.location += obj.parent.matrix_world.to_3x3().inverted_safe() @ (
-                            world_width_axis * width * (1 - factor) / 2)
     openings(scene, parent, walls, trim, seal, glass_mat, hardware, textures['oakDoor'])
 
 
