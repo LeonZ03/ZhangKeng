@@ -12,32 +12,36 @@ export function createExplorer({ canvas, stage, requestFrame, exit }) {
   camera.rotation.order = 'YXZ';
   const hud = document.getElementById('explore-hud');
   const reticle = document.getElementById('explore-reticle');
-  const target = document.getElementById('explore-target');
   const notice = document.getElementById('explore-feedback');
+  const detail = document.getElementById('explore-detail');
+  const help = document.getElementById('explore-hint');
+  const overviewLabel = canvas.getAttribute('aria-label');
   const moveButtons = [...hud.querySelectorAll('[data-fly]')];
   const inputs = new Map();
   const pointer = new THREE.Vector2();
   const center = new THREE.Vector2();
   const delta = new THREE.Vector3();
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let world, currentModel, drag, aim, feedbackTimer, lastFrame = 0, lastPick = -Infinity;
+  let world, currentModel, drag, aim, detailTimer, lastFrame = 0, lastPick = -Infinity;
   let active = false, locked = false, wasDragged = false, cameraChanged = false, aimChanged = false;
 
   function ready() {
     return active && !document.hidden && !document.querySelector('dialog[open]');
   }
 
-  function feedback(message) {
-    clearTimeout(feedbackTimer);
+  function announce(message) {
     notice.textContent = message;
-    notice.hidden = !message;
-    if (message) feedbackTimer = setTimeout(() => { notice.hidden = true; }, 3200);
+  }
+
+  function showDetail(message = '') {
+    clearTimeout(detailTimer);
+    detail.textContent = message;
+    detail.hidden = !message;
+    help.hidden = !active || Boolean(message);
+    if (message) detailTimer = setTimeout(showDetail, 3200);
   }
 
   function showTarget(item) {
-    const label = world.hint(item);
-    if (target.textContent !== label) target.textContent = label;
-    target.hidden = !label;
     canvas.classList.toggle('explore-pickable', Boolean(item));
     reticle.classList.toggle('aimed', Boolean(item));
   }
@@ -136,7 +140,8 @@ export function createExplorer({ canvas, stage, requestFrame, exit }) {
     camera.position.set(4.47, 1.57, 10.55);
     camera.rotation.set(0, 0, 0);
     aim = undefined;
-    feedback('');
+    announce('');
+    showDetail();
     cameraChanged = true;
     canvas.focus({ preventScroll: true });
     invalidateAim();
@@ -145,13 +150,13 @@ export function createExplorer({ canvas, stage, requestFrame, exit }) {
   function enter(model) {
     if (currentModel !== model) {
       currentModel = model;
-      world = createExploreScene(model, feedback);
+      world = createExploreScene(model, { announce, inspect: showDetail });
     }
     world.refresh();
     active = true;
     hud.hidden = false;
     canvas.tabIndex = 0;
-    canvas.setAttribute('aria-label', '自由探索别墅，操作见视口下方');
+    canvas.setAttribute('aria-label', '自由探索郑家大院，操作见视口下方');
     reset();
   }
 
@@ -163,8 +168,9 @@ export function createExplorer({ canvas, stage, requestFrame, exit }) {
     hud.hidden = true;
     reticle.hidden = true;
     canvas.removeAttribute('tabindex');
-    canvas.setAttribute('aria-label', '可旋转、缩放和切换楼层的三维别墅');
-    feedback('');
+    canvas.setAttribute('aria-label', overviewLabel);
+    announce('');
+    showDetail();
   }
 
   canvas.addEventListener('pointerdown', event => {
@@ -212,7 +218,7 @@ export function createExplorer({ canvas, stage, requestFrame, exit }) {
     try {
       await canvas.requestPointerLock?.();
     } catch {
-      feedback('可以拖动画面环顾');
+      announce('可以拖动画面环顾');
     }
   });
   document.addEventListener('pointerlockchange', () => {

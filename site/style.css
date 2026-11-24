@@ -38,15 +38,15 @@ h1 { font: 700 clamp(23px, 2.2vw, 32px)/1.1 var(--serif); letter-spacing: .055em
 .outline-button:hover { background: var(--active); border-color: #bfc6b5; }
 .outline-button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
 .workbench { display: grid; grid-template-columns: minmax(0, 1fr) minmax(256px, 290px); gap: 18px; align-items: start; padding: 20px clamp(16px, 3.2vw, 52px) 30px; }
-.view, .inspector { background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgb(50 46 33 / 3%); }
-.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 9px; min-height: 68px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.inspector { background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgb(50 46 33 / 3%); }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 9px; min-height: 60px; padding: 0 0 8px; }
 .modes { display: flex; gap: 4px; padding: 4px; background: #f0ede4; border: 1px solid #e8e3d8; border-radius: 10px; }
 .modes button { min-height: 35px; border: 0; border-radius: 7px; background: transparent; padding: 0 clamp(8px, 1vw, 16px); font-size: 13px; font-weight: 650; white-space: nowrap; }
 .modes button:hover:not(:disabled, [aria-pressed="true"]) { background: #e8e5db; }
 .modes button:disabled { color: var(--soft); opacity: .62; }
 .modes button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 
-.stage { height: clamp(480px, 67vh, 960px); position: relative; isolation: isolate; overflow: hidden; background: radial-gradient(ellipse at 48% 43%, #f7f3e8 13%, #eeeadf 60%, #e4e0d4); }
+.stage { height: clamp(480px, 67vh, 960px); position: relative; isolation: isolate; overflow: hidden; }
 .model-loading { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; }
 .loading-meter { width: min(320px, 100%); }
 .loading-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 11px; font-size: 14px; }
@@ -68,7 +68,6 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 .camera-controls { position: absolute; bottom: 15px; right: 15px; display: flex; gap: 3px; padding: 3px; border: 1px solid #d4d1c5; background: #fcfaf2; box-shadow: 0 2px 12px #39351612; border-radius: 8px; }
 .camera-controls button { min-width: 41px; height: 39px; border: 0; border-radius: 5px; font: 500 23px/1 system-ui; background: transparent; }
 .camera-controls button:hover { background: var(--active); }
-.stage.exploring { background: linear-gradient(#c8d7df, #e9e8dc); }
 .exploring .view-caption, .exploring .camera-controls { display: none; }
 .toolbar .measure:disabled { opacity: .57; }
 .exploring canvas.explore-pickable { cursor: pointer; }
@@ -78,8 +77,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 .explore-tools button { min-height: 44px; }
 .explore-reticle { position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; translate: -50% -50%; border: 1px solid #242923; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px #fff9; }
 .explore-reticle.aimed { background: #dce9b6; outline: 2px solid #eef6dd; outline-offset: 2px; }
-.explore-notices { position: absolute; inset: auto 12px 18px; display: grid; justify-items: center; gap: 5px; }
-.explore-notices p { max-width: 100%; padding: 6px 10px; border-radius: 6px; background: #262e23eb; color: #fff; text-align: center; font-size: 13px; line-height: 1.5; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .fly-controls, .touch-hint { display: none; }
 .fly-controls button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--sheet); font-weight: 700; touch-action: none; }
 .fly-controls .held { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -95,7 +93,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 .room-label { position: absolute; left: 0; top: 0; translate: -50% -50%; border-radius: 5px; background: #fdfaf0ee; color: #373c31; padding: 3px 6px; border: 1px solid #d5d1c1; font-size: 11px; font-weight: 650; white-space: nowrap; box-shadow: 0 1px 3px #47422b15; }
 .room-label.unresolved { background: #efebdf; border-style: dashed; }
 .room-label.level-tag { background: var(--accent); border-color: var(--accent); color: #fff; padding: 5px 9px; font-size: 12px; }
-.view-footer { display: flex; min-height: 43px; padding: 8px 15px; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); font-size: 12px; color: var(--soft); }
+.view-footer { display: flex; min-height: 43px; padding: 8px 0; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--soft); }
 .unit { flex-shrink: 0; }
 .unit span { font: 500 11px/1.3 Consolas, monospace; margin-left: 4px; }
 
@@ -147,7 +145,6 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
 @media (min-width: 1500px) { .workbench { grid-template-columns: minmax(0, 1fr) 310px; } }
 @media (max-width: 900px) {
   .workbench { padding-inline: 14px; gap: 12px; grid-template-columns: minmax(0, 1fr) 237px; }
-  .toolbar { padding-inline: 9px; }
   .inspector-section { padding-inline: 12px; }
 }
 @media (max-width: 730px) {
@@ -162,7 +159,7 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
   .measure { padding-inline: 8px; font-size: 12px; }
   .view-caption { left: 12px; top: 12px; }
   .compass { right: 10px; top: 10px; }
-  .view-footer { padding-inline: 10px; font-size: 11px; }
+  .view-footer { font-size: 11px; }
   .unit span { display: none; }
   .layer-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inspector-section { padding: 14px 13px; }
@@ -172,7 +169,6 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
 }
 @media (pointer: coarse) {
   .fly-controls { display: grid; position: absolute; gap: 4px; pointer-events: auto; }
-  .explore-notices { bottom: 116px; }
   .desktop-hint { display: none; }
   .touch-hint { display: inline; }
 }

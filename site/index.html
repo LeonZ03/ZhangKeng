@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f2ea">
-  <meta name="description" content="樟坑别墅的三维模型、楼层剖切和家具布置参考。">
-  <title>樟坑别墅 · 三维装修参考</title>
+  <meta name="description" content="郑家大院的三维模型、楼层剖切和家具布置参考。">
+  <title>郑家大院 · 三维装修参考</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./style.css">
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
@@ -15,13 +15,13 @@
   <header class="masthead">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true"><i></i></span>
-      <div><h1>樟坑别墅</h1><p>三维装修参考</p></div>
+      <div><h1>郑家大院</h1><p>三维装修参考</p></div>
     </div>
     <button class="outline-button" id="about-open" type="button">图纸与尺寸 <span aria-hidden="true">↗</span></button>
   </header>
 
   <main class="workbench">
-    <section class="view" aria-label="别墅查看器">
+    <section class="view" aria-label="郑家大院三维查看器">
       <div class="toolbar" data-model-controls inert>
         <div class="modes" role="group" aria-label="视图">
           <button type="button" data-mode="exterior" aria-pressed="true">整栋</button>
@@ -64,10 +64,7 @@
               <button class="outline-button" id="explore-exit" type="button">退出探索</button>
             </div>
             <div class="explore-reticle" id="explore-reticle" aria-hidden="true" hidden></div>
-            <div class="explore-notices">
-              <p id="explore-target" hidden></p>
-              <p id="explore-feedback" role="status" hidden></p>
-            </div>
+            <div class="visually-hidden" id="explore-feedback" role="status"></div>
             <div class="fly-controls fly-directions" role="group" aria-label="前后左右移动">
               <button type="button" data-fly="forward" aria-label="向前">↑</button>
               <button type="button" data-fly="left" aria-label="向左">←</button>
@@ -89,6 +86,7 @@
           <span class="desktop-hint">WASD 移动 · ↑ ↓ 或滚轮升降 · Shift 加速 · 拖动环顾 · 点击物品或对准按 Enter · 双击锁定鼠标，Esc 释放</span>
           <span class="touch-hint">按住按钮移动或升降 · 滑动环顾 · 轻触物品</span>
         </p>
+        <p id="explore-detail" role="status" hidden></p>
         <p class="unit">米制模型 <span>1 m = 1 m</span></p>
       </div>
     </section>

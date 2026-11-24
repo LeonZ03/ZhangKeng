@@ -9,10 +9,6 @@ const limits = {
   y: [-0.55, roof.crossRidge + 3],
   z: [yard.north - 2, yard.south + 2],
 };
-const verbs = {
-  swing: ['打开', '关上'], slide: ['推开', '关上'],
-  light: ['开灯', '关灯'], water: ['打开', '关闭'],
-};
 const reports = {
   swing: ['已关上', '已打开'], slide: ['已关上', '已推开'],
   light: ['已关灯', '已开灯'], water: ['已关水', '正在出水'],
@@ -29,7 +25,7 @@ function makeWater(length) {
   return water;
 }
 
-export function createExploreScene(model, onFeedback) {
+export function createExploreScene(model, { announce, inspect }) {
   const ray = new THREE.Raycaster();
   const segment = new THREE.Box3();
   const endpoint = new THREE.Vector3();
@@ -45,7 +41,7 @@ export function createExploreScene(model, onFeedback) {
   for (const info of furnishings) targets.set(model.furniture.get(info.id), { label: info.name, info });
   const nodes = [];
   model.root.traverse(node => {
-    if (Object.hasOwn(verbs, node.userData.exploreAction)) nodes.push(node);
+    if (Object.hasOwn(reports, node.userData.exploreAction)) nodes.push(node);
   });
   for (const node of nodes) {
     const { exploreAction: action, exploreLabel: label, exploreAmount: amount } = node.userData;
@@ -140,16 +136,10 @@ export function createExploreScene(model, onFeedback) {
     return firstHit(reach)?.item;
   }
 
-  function hint(item) {
-    if (!item) return '';
-    if (!item.action) return `查看 ${item.label}`;
-    return `${item.label} · ${verbs[item.action][Number(item.open)]}`;
-  }
-
   function interact(item) {
     if (!item.action) {
       const { room, name, w, d } = item.info;
-      onFeedback(`${room} · ${name} · 占地 ${w.toFixed(2)} × ${d.toFixed(2)} m`);
+      inspect(`${room} · ${name} · 占地 ${w.toFixed(2)} × ${d.toFixed(2)} m`);
       return;
     }
     item.open = !item.open;
@@ -157,7 +147,7 @@ export function createExploreScene(model, onFeedback) {
       item.effect.visible = item.open;
       for (const shade of item.shades ?? []) shade.emissiveIntensity = item.open ? 0.8 : 0;
     } else motions.add(item);
-    onFeedback(`${item.label} · ${reports[item.action][Number(item.open)]}`);
+    announce(`${item.label} · ${reports[item.action][Number(item.open)]}`);
   }
 
   function apply(item, value) {
@@ -184,7 +174,7 @@ export function createExploreScene(model, onFeedback) {
       if (blocked) {
         apply(item, item.value);
         item.open = !item.open;
-        onFeedback('请稍微离开门边');
+        announce('请稍微离开门边');
       } else {
         item.value = next;
         changed = true;
@@ -202,5 +192,5 @@ export function createExploreScene(model, onFeedback) {
     motions.clear();
   }
 
-  return { refresh, move, pick, hint, interact, step, finish };
+  return { refresh, move, pick, interact, step, finish };
 }

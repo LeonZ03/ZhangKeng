@@ -69,7 +69,7 @@ def exterior_opening(wall, opening, builder, glass, fittings, frame):
         strip(fittings, u + 0.025, elevation + 0.008, 0.066, 0.015, 0.017, 0.075)
 
 
-def openings(scene, root, walls, trim, frame, glass_mat, fittings_mat):
+def openings(scene, root, walls, trim, frame, glass_mat, fittings_mat, oak):
     trim_builder, gaskets, panes, fittings = [MeshBuilder() for _ in range(4)]
 
     def xwall_strip(builder, wall, center, elevation, width, height, thickness=.020, depth=.051):
@@ -124,7 +124,7 @@ def openings(scene, root, walls, trim, frame, glass_mat, fittings_mat):
                     xwall_strip(gaskets, wall, start + width / 2, low + fw / 2, width, fw)
                     xwall_strip(gaskets, wall, start + width / 2, high - fw / 2, width, fw)
                     continue
-                if opening['type'] == 'entry' and wall['axis'] == 'x':
+                if opening['type'] == 'entry' and wall['axis'] == 'x' and wall['position'] == 7.8:
                     # Keep the measured opening's surrounding shell and jambs,
                     # while giving its existing glazed leaf a true hinge pivot.
                     start, width = opening['start'], opening['width']
@@ -139,21 +139,62 @@ def openings(scene, root, walls, trim, frame, glass_mat, fittings_mat):
                         pivot.parent = root
                         pivot.location = (hinge_x, -wall['position'], 0)
                         pivot['exploreAction'] = 'swing'
-                        pivot['exploreLabel'] = f'南侧入户玻璃门{side}'
+                        pivot['exploreLabel'] = f'正门深橡木双开门{side}'
                         pivot['exploreAmount'] = 1.2 if sign > 0 else -1.2
                         door_frame, door_glass = MeshBuilder(), MeshBuilder()
+                        handle = MeshBuilder()
                         x0, x1 = (0, leaf_w) if sign > 0 else (-leaf_w, 0)
                         y = .006
-                        door_glass.face([(x0 + .043, y, .052), (x1 - .043, y, .052),
-                                         (x1 - .043, y, top - .049), (x0 + .043, y, top - .049)])
-                        for u in [x0 + .026, x1 - .026]:
-                            door_frame.box((u, y, top / 2), (.043, .057, top - .038), bevel=.004)
-                        for z in [.027, top - .027]:
-                            door_frame.box(((x0 + x1) / 2, y, z), (leaf_w, .057, .043), bevel=.004)
+                        # Solid oak leaf with a recessed central panel and raised rails.
+                        door_frame.box(((x0 + x1) / 2, y, top / 2), (leaf_w, .078, top - .03), bevel=.009)
+                        door_frame.box(((x0 + x1) / 2, y - .043, top / 2), (leaf_w - .13, .012, top - .26), bevel=.012)
                         pull_x = x1 - .10 if sign > 0 else x0 + .10
-                        door_frame.box((pull_x, -.033, 1.04), (.021, .019, .16), bevel=.004)
-                        door_frame.object(scene, pivot, f'South entrance {side} frame and handle', frame)
-                        door_glass.object(scene, pivot, f'South entrance {side} safety glass', glass_mat)
+                        handle.box((pull_x, -.052, 1.04), (.021, .019, .16), bevel=.004)
+                        door_frame.object(scene, pivot, f'South oak entrance {side} leaf and hardware', oak)
+                        handle.object(scene, pivot, f'South entrance {side} handle', fittings_mat)
+                    continue
+                if opening['type'] == 'entry' and wall['axis'] == 'z' and wall['position'] == 0:
+                    # Upper west stair landing door keeps its glazed appearance and swings on its own hinge.
+                    start, width = opening['start'], opening['width']
+                    top = opening['sill'] + opening['height']
+                    pivot = bpy.data.objects.new('可操作西侧楼梯二层玻璃门', None)
+                    root.users_collection[0].objects.link(pivot)
+                    pivot.parent = root
+                    pivot.location = (0, -start, 0)
+                    pivot['exploreAction'] = 'swing'
+                    pivot['exploreLabel'] = '楼梯门二层西侧玻璃门'
+                    pivot['exploreAmount'] = -1.15
+                    leaf_frame, leaf_glass = MeshBuilder(), MeshBuilder()
+                    # Local X follows the wall opening; the pivot sits on the north jamb.
+                    leaf_frame.box((-.006, -width / 2, top / 2), (.057, width, .043), bevel=.003)
+                    leaf_frame.box((-.006, -width / 2, top - .027), (.057, width, .043), bevel=.003)
+                    for u in [-.027, -width + .027]:
+                        leaf_frame.box((-.006, u, top / 2), (.057, .043, top - .038), bevel=.003)
+                    leaf_glass.face([(.006, -.05, .052), (.006, -width + .05, .052),
+                                     (.006, -width + .05, top - .05), (.006, -.05, top - .05)])
+                    leaf_frame.box((-.038, -width + .10, 1.02), (.018, .018, .15), bevel=.003)
+                    leaf_frame.object(scene, pivot, 'Upper west stair door frame and pull', frame)
+                    leaf_glass.object(scene, pivot, 'Upper west stair door safety glass', glass_mat)
+                    continue
+                if opening['type'] == 'door' and wall['axis'] == 'x' and wall['position'] == 0 and abs(opening['start'] - 7.05) < .01:
+                    # Measured north service doorway: independent oak leaf, fixed jambs and canopy stay put.
+                    exterior_opening(wall, opening, trim_builder, panes, fittings, gaskets)
+                    start, width = opening['start'], opening['width']
+                    top = opening['sill'] + opening['height']
+                    pivot = bpy.data.objects.new('可操作北侧后门橡木单扇', None)
+                    root.users_collection[0].objects.link(pivot)
+                    pivot.parent = root
+                    pivot.location = (start + .047, 0, 0)
+                    pivot['exploreAction'] = 'swing'
+                    pivot['exploreLabel'] = '后门北侧深橡木单扇'
+                    pivot['exploreAmount'] = -1.18
+                    leaf_width = width - .094
+                    leaf, hardware = MeshBuilder(), MeshBuilder()
+                    leaf.box((leaf_width / 2, .01, top / 2), (leaf_width, .078, top - .025), bevel=.009)
+                    leaf.box((leaf_width / 2, -.034, top / 2), (leaf_width - .12, .012, top - .24), bevel=.012)
+                    hardware.box((leaf_width - .10, -.061, 1.02), (.021, .019, .16), bevel=.004)
+                    leaf.object(scene, pivot, 'North oak rear door leaf', oak)
+                    hardware.object(scene, pivot, 'North rear door handle', fittings_mat)
                     continue
                 exterior_opening(wall, opening, trim_builder, panes, fittings, gaskets)
     trim_builder.object(scene, root, "North service entrance rain hood", trim)
@@ -295,7 +336,7 @@ def refine_shell(scene, parent, walls, heights, textures, glass_mat, frame, seal
                         obj.scale[local] *= factor
                         obj.location += obj.parent.matrix_world.to_3x3().inverted_safe() @ (
                             world_width_axis * width * (1 - factor) / 2)
-    openings(scene, parent, walls, trim, seal, glass_mat, hardware)
+    openings(scene, parent, walls, trim, seal, glass_mat, hardware, textures['oakDoor'])
 
 
 def refine(ctx):
@@ -308,6 +349,7 @@ def refine(ctx):
         "footer": surfaces.textured("Slate-colored cement plinth", (108, 112, 107), "stone", 0.9, 0.42),
         "stone": surfaces.textured("Honed pale limestone", (185, 174, 152), "stone", 0.78, 0.42),
         "soffit": surfaces.textured("Honey fir exterior joinery", (167, 110, 61), "wood", 0.56, 0.37),
+        "oakDoor": surfaces.textured("Dark stained oak entrance doors", (72, 43, 26), "wood", 0.48, 0.32),
         "treads": surfaces.textured("Light oiled timber stair nosing", (196, 142, 79), "wood", 0.57, 0.36),
         "deck": surfaces.textured("Warm composite decking", (133, 103, 75), "wood", 0.72, 0.35),
         "ceramic": surfaces.textured("Charcoal glazed ceramic roof tile", (49, 52, 58), "slate", 0.37, 0.30),
