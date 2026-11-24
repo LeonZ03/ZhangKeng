@@ -23,6 +23,22 @@
       <div><h1>郑家大院</h1><p>三维装修参考</p></div>
     </div>
     <button class="outline-button" id="about-open" type="button">图纸与尺寸 <span aria-hidden="true">↗</span></button>
+    <div class="explore-header" id="explore-header" hidden>
+      <p id="explore-hint" class="desktop-hint">
+        <span>WASD 移动 · ↑↓ 或滚轮升降 · Shift 加速</span>
+        <span>拖动环顾 · 点击物品或按 Enter · 双击锁定鼠标，Esc 释放</span>
+      </p>
+      <details class="explore-menu" id="explore-menu">
+        <summary class="outline-button">探索操作 <span aria-hidden="true">⌄</span></summary>
+        <div class="explore-menu-panel">
+          <p class="touch-hint">按住按钮移动或升降，滑动环顾，轻触物品。</p>
+          <div class="explore-menu-actions">
+            <button class="outline-button" id="explore-reset" type="button">回到入口</button>
+            <button class="outline-button" id="explore-exit" type="button">退出探索</button>
+          </div>
+        </div>
+      </details>
+    </div>
   </header>
 
   <main class="workbench">
@@ -65,10 +81,6 @@
             <button type="button" id="reset-view" title="复位视角" aria-label="复位视角">↺</button>
           </div>
           <div class="explore-hud" id="explore-hud" hidden>
-            <div class="explore-tools" role="group" aria-label="探索控制">
-              <button class="outline-button" id="explore-reset" type="button">回到入口</button>
-              <button class="outline-button" id="explore-exit" type="button">退出探索</button>
-            </div>
             <div class="explore-reticle" id="explore-reticle" aria-hidden="true" hidden></div>
             <div class="visually-hidden" id="explore-feedback" role="status"></div>
             <div class="fly-controls fly-directions" role="group" aria-label="前后左右移动">
@@ -88,10 +100,6 @@
       </div>
       <div class="view-footer">
         <p id="view-hint">拖动旋转 · 滚动缩放 · 右键拖动平移</p>
-        <p id="explore-hint" hidden>
-          <span class="desktop-hint">WASD 移动 · ↑ ↓ 或滚轮升降 · Shift 加速 · 拖动环顾 · 点击物品或对准按 Enter · 双击锁定鼠标，Esc 释放</span>
-          <span class="touch-hint">按住按钮移动或升降 · 滑动环顾 · 轻触物品</span>
-        </p>
         <p id="explore-detail" role="status" hidden></p>
         <p class="unit">米制模型 <span>1 m = 1 m</span></p>
       </div>

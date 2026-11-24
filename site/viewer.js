@@ -200,8 +200,7 @@ function makeViewer() {
     if (movement?.shadows) elementary.shadowMap.needsUpdate = true;
     if (dirty || (exploring ? movement.changed : nextFrame)) {
       elementary.render(scene, exploring ? explorer.camera : camera);
-      if (exploring) $('north-arrow').style.rotate = `${explorer.camera.rotation.y}rad`;
-      else projectLabels();
+      if (!exploring) projectLabels();
       dirty = false;
       if (!showingStage) {
         showingStage = true;
@@ -438,7 +437,8 @@ function makeViewer() {
     modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === state.mode)));
     floorButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.floor === state.floor)));
     $('measure').setAttribute('aria-pressed', String(state.measuring));
-    $('measure').disabled = exploring;
+    $('measure').hidden = exploring;
+    $('about-open').hidden = exploring;
     canvas.classList.toggle('measuring', state.measuring);
     stage.classList.toggle('exploring', exploring);
     inspector.inert = exploring || stage.dataset.model === 'loading';
@@ -450,7 +450,6 @@ function makeViewer() {
     const gestureHint = state.mode === 'plan' ? planHint : orbitHint;
     $('view-hint').textContent = state.measuring ? '点选两个位置，测量水平距离' : gestureHint;
     $('view-hint').hidden = exploring;
-    $('explore-hint').hidden = !exploring;
     const floor = floors[state.floor];
     $('floor-elevation').textContent = state.floor === 'ground' ? '±0.000' : state.floor === 'upper' ? '+3.300' : state.floor === 'roof' ? '照片估算' : '室外';
     $('scene-index').textContent = solo ? floor?.tag ?? (state.floor === 'roof' ? '屋面' : '室外') : exploded ? '逐层展开' : '整栋';
@@ -672,12 +671,6 @@ function makeViewer() {
     status('图形上下文已断开，正在等待恢复。');
   });
   canvas.addEventListener('webglcontextrestored', () => { status(); renderSoon(true); });
-  $('about-open').addEventListener('click', explorer.pause);
-  $('about').addEventListener('close', () => {
-    if (state.mode !== 'explore') return;
-    canvas.focus({ preventScroll: true });
-    requestFrame();
-  });
   modelRetry.addEventListener('click', upgradeModel);
   show({ reset: true });
   upgradeModel();
