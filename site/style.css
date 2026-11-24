@@ -39,6 +39,8 @@ h1 { font: 700 clamp(23px, 2.2vw, 32px)/1.1 var(--serif); letter-spacing: .055em
 .outline-button { display: inline-flex; gap: 7px; align-items: center; justify-content: center; min-height: 40px; padding: 0 13px; border: 1px solid var(--line); background: var(--sheet); border-radius: 8px; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .outline-button:hover { background: var(--active); border-color: #bfc6b5; }
 .outline-button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
+.icon-button { min-width: 40px; padding: 0; }
+.button-icon { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .workbench { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(256px, 290px); grid-template-rows: minmax(0, 1fr); gap: 18px; align-items: start; padding: 20px clamp(16px, 3.2vw, 52px) 22px; }
 .inspector { max-height: 100%; background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; overflow: auto; box-shadow: 0 2px 12px rgb(50 46 33 / 3%); }
 .view { display: flex; flex-direction: column; min-height: 0; min-width: 0; align-self: stretch; }
@@ -168,6 +170,7 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
 .drawing-pages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .drawing-pages img { display: block; width: 100%; height: auto; background: white; }
 #about:has(#drawing-zoom[aria-pressed="true"]) .drawing-pages { width: max(200%, 1360px); }
+#drawing-zoom[aria-pressed="true"] .zoom-plus { display: none; }
 
 @media (min-width: 1500px) { .workbench { grid-template-columns: minmax(0, 1fr) 310px; } }
 @media (max-width: 900px) {
@@ -247,6 +250,7 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
   .inspector-section { padding: 14px var(--phone-right) 14px var(--phone-left); }
   .switches label { min-height: 44px; }
   .outline-button { min-height: 44px; }
+  .icon-button { min-width: 44px; }
   .camera-controls button, .item-controls button { min-height: 44px; min-width: 44px; }
   .room-label { font-size: 10px; padding: 3px 4px; }
 }

@@ -8,6 +8,8 @@
   <title>郑家大院 · 三维装修参考</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./style.css">
+  <link rel="preload" as="image" href="./assets/drawings/floor-plan-1.png">
+  <link rel="preload" as="image" href="./assets/drawings/floor-plan-2.png">
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
   <script type="module" src="./viewer.js"></script>
 </head>
@@ -49,7 +51,9 @@
           <button type="button" data-mode="explore" aria-pressed="false" disabled>自由探索</button>
         </div>
         <div class="view-actions">
-          <button type="button" class="outline-button measure" id="measure" aria-pressed="false">量尺寸</button>
+          <button type="button" class="outline-button icon-button measure" id="measure" aria-pressed="false" aria-label="量尺寸" title="量尺寸">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-40 12 12)"><rect x="2.5" y="8" width="19" height="8" rx="1.5"/><path d="M7 8v3m5-3v4m5-4v3"/></g></svg>
+          </button>
           <button type="button" class="outline-button" id="phone-settings-open" aria-haspopup="dialog" aria-controls="phone-settings">楼层与布置</button>
         </div>
       </div>
@@ -145,7 +149,11 @@
   <dialog id="phone-settings" aria-labelledby="phone-settings-title">
     <div class="dialog-heading phone-settings-heading">
       <h2 id="phone-settings-title">楼层与布置</h2>
-      <form method="dialog"><button type="submit" class="outline-button" autofocus>关闭</button></form>
+      <form method="dialog">
+        <button type="submit" class="outline-button icon-button" aria-label="关闭" title="关闭" autofocus>
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </form>
     </div>
   </dialog>
 
@@ -153,14 +161,20 @@
     <div class="dialog-heading">
       <h2 id="about-title">图纸与尺寸</h2>
       <div class="drawing-actions">
-        <button type="button" class="outline-button" id="drawing-zoom" aria-controls="drawing-scroll" aria-pressed="false">放大</button>
-        <form method="dialog"><button type="submit" class="outline-button" autofocus>关闭</button></form>
+        <button type="button" class="outline-button icon-button" id="drawing-zoom" aria-controls="drawing-scroll" aria-pressed="false" aria-label="放大" title="放大或还原">
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.3 15.3 5 5M7.5 10.5h6"/><path class="zoom-plus" d="M10.5 7.5v6"/></svg>
+        </button>
+        <form method="dialog">
+          <button type="submit" class="outline-button icon-button" aria-label="关闭" title="关闭" autofocus>
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+          </button>
+        </form>
       </div>
     </div>
     <div id="drawing-scroll" class="drawing-scroll" role="region" aria-label="建筑设计方案图纸" tabindex="0">
       <div class="drawing-pages">
-        <img src="./assets/drawings/floor-plan-1.png" width="2646" height="3742" loading="lazy" alt="一层平面图，比例 1:50">
-        <img src="./assets/drawings/floor-plan-2.png" width="2646" height="3742" loading="lazy" alt="二层平面图，比例 1:50">
+        <img src="./assets/drawings/floor-plan-1.png" width="2646" height="3742" alt="一层平面图，比例 1:50">
+        <img src="./assets/drawings/floor-plan-2.png" width="2646" height="3742" alt="二层平面图，比例 1:50">
       </div>
     </div>
   </dialog>
