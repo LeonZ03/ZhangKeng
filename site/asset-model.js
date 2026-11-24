@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
 import { furnishings } from './plan.js';
 
-const assetUrl = new URL('./assets/zhangkeng.glb', import.meta.url);
+const assetUrl = new URL('./assets/zhangkeng.glb', document.baseURI);
 const downloadIdleLimit = 25000;
 
 async function downloadAsset(onProgress) {
   const { packedModel, packedBytes } = document.getElementById('stage').dataset;
   const packed = Boolean(packedModel && typeof DecompressionStream === 'function' && typeof TransformStream === 'function');
-  const url = packed ? new URL(packedModel, import.meta.url) : assetUrl;
+  const url = packed ? new URL(packedModel, document.baseURI) : assetUrl;
   const request = new AbortController();
   let timeout;
   const keepAlive = () => {
@@ -22,6 +22,7 @@ async function downloadAsset(onProgress) {
     if (!response.ok) throw new Error(`Model download returned HTTP ${response.status}.`);
     keepAlive();
     const total = (packed ? Number(packedBytes) : 0) || Number(response.headers.get('content-length'));
+    onProgress(0, total);
     if (!response.body || typeof TransformStream !== 'function') return await response.arrayBuffer();
     let received = 0;
     let stream = response.body.pipeThrough(new TransformStream({

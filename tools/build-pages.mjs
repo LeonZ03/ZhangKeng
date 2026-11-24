@@ -1,6 +1,8 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { join, relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 const source = new URL('../site/', import.meta.url);
@@ -13,11 +15,43 @@ const packedPath = `assets/models/${digest}.glb.gz`;
 const index = await readFile(new URL('index.html', source), 'utf8');
 const marker = 'data-packed-model="" data-packed-bytes=""';
 if (!index.includes(marker)) throw new Error('Missing model download configuration on the stage.');
+
+const sourceDirectory = fileURLToPath(source);
+const sourcePath = (path) => relative(sourceDirectory, path).split(sep).join('/');
+const appPaths = (await readdir(source, { recursive: true, withFileTypes: true }))
+  .filter(entry => entry.isFile())
+  .map(entry => sourcePath(join(entry.parentPath, entry.name)))
+  .filter(path => path.startsWith('vendor/') || /\.(js|css)$/.test(path))
+  .sort();
+const appFiles = await Promise.all(appPaths.map(async path => ({ path, contents: await readFile(new URL(path, source)) })));
+const appHash = createHash('sha256');
+for (const { path, contents } of appFiles) {
+  appHash.update(path).update('\0').update(contents).update('\0');
+}
+const appPath = `_app/${appHash.digest('hex').slice(0, 16)}/`;
+const appOutput = new URL(appPath, output);
+
 await mkdir(output, { recursive: true });
-await cp(source, output, { recursive: true });
+await cp(source, output, {
+  recursive: true,
+  filter(path) {
+    const name = sourcePath(path);
+    return name !== 'index.html' && name !== 'vendor' && !appPaths.includes(name);
+  },
+});
+await Promise.all(appFiles.map(async ({ path, contents }) => {
+  const target = new URL(path, appOutput);
+  await mkdir(new URL('.', target), { recursive: true });
+  await writeFile(target, contents);
+}));
 await mkdir(new URL('assets/models/', output), { recursive: true });
 await writeFile(new URL(packedPath, output), compressed);
-await writeFile(new URL('index.html', output), index.replace(marker, `data-packed-model="./${packedPath}" data-packed-bytes="${compressed.length}"`));
+const html = index
+  .replace(marker, `data-packed-model="./${packedPath}" data-packed-bytes="${compressed.length}"`)
+  .replace('./style.css', `./${appPath}style.css`)
+  .replace('./vendor/three.module.js', `./${appPath}vendor/three.module.js`)
+  .replace('./viewer.js', `./${appPath}viewer.js`);
+await writeFile(new URL('index.html', output), html);
 let revision = process.env.CF_PAGES_COMMIT_SHA || 'local';
 try {
   if (revision === 'local') revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();

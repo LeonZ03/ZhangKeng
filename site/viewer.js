@@ -40,6 +40,11 @@ function clampPlacement(item, x, z, angle) {
 function makeViewer() {
   const scene = new THREE.Scene();
   const stage = $('stage');
+  const modelView = $('model-view');
+  const loadingPanel = $('model-loading');
+  const loadingStatus = $('loading-status');
+  const loadingProgress = $('loading-progress');
+  const loadingPercent = $('loading-percent');
   const modelNote = $('model-note');
   const modelRetry = $('model-retry');
   const modelControls = document.querySelectorAll('[data-model-controls]');
@@ -259,10 +264,12 @@ function makeViewer() {
     status();
   }
 
-  function showModelStatus(mode, message) {
+  function showModelStatus(mode, message = '') {
     const loading = mode === 'loading';
     stage.dataset.model = mode;
-    stage.setAttribute('aria-busy', String(loading));
+    loadingPanel.hidden = !loading;
+    modelView.hidden = loading;
+    modelView.setAttribute('aria-busy', String(loading));
     modelNote.textContent = message;
     modelRetry.hidden = mode !== 'schematic';
     for (const element of modelControls) element.inert = loading;
@@ -312,16 +319,27 @@ function makeViewer() {
     elementary.shadowMap.needsUpdate = true;
   }
 
+  function setDownloadProgress(percent) {
+    const text = `${percent}%`;
+    if (loadingPercent.textContent === text) return;
+    loadingProgress.value = percent;
+    loadingPercent.textContent = text;
+  }
+
   async function upgradeModel() {
-    showModelStatus('loading', '正在加载写实模型…');
+    loadingStatus.textContent = '正在准备写实模型…';
+    loadingProgress.removeAttribute('value');
+    loadingPercent.textContent = '';
+    showModelStatus('loading');
     try {
       const { loadAssetModel, makeDaylightEnvironment } = await import('./asset-model.js');
+      loadingStatus.textContent = '正在下载写实模型…';
       const asset = await loadAssetModel((received, total) => {
-        if (!total) return;
-        const percent = Math.min(100, Math.floor(received / total * 100));
-        const note = `正在下载写实模型 · ${percent}%`;
-        if (modelNote.textContent !== note) modelNote.textContent = note;
-      }, () => { modelNote.textContent = '下载完成，正在生成三维画面…'; });
+        if (total > 0) setDownloadProgress(Math.min(100, Math.floor(received / total * 100)));
+      }, () => {
+        setDownloadProgress(100);
+        loadingStatus.textContent = '正在生成三维画面…';
+      });
       pendingAsset = { model: asset, environment: makeDaylightEnvironment() };
       renderSoon();
     } catch (error) {
@@ -589,9 +607,10 @@ try {
   makeViewer();
 } catch (error) {
   console.error(error);
-  $('stage').dataset.model = 'preview';
-  $('stage').setAttribute('aria-busy', 'false');
-  $('model-note').hidden = true;
+  $('stage').dataset.model = 'unavailable';
+  $('model-loading').hidden = true;
+  $('model-view').hidden = true;
+  $('model-view').removeAttribute('aria-busy');
   $('view-error').textContent = '三维模型暂时无法打开。请启用浏览器的 WebGL 2 和硬件加速，再刷新页面。';
   $('view-error').hidden = false;
   document.querySelectorAll('.workbench button, .workbench input, .workbench select').forEach(control => { control.disabled = true; });
