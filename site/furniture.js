@@ -7,8 +7,8 @@ function bed(node, { w, d }) {
   cushion(node, mats.wood, 0, 0.53, -d / 2 + 0.044, w, 0.61, 0.09);
   cushion(node, mats.cloth, 0, 0.49, 0.18, w - 0.04, 0.105, d - 0.42);
   cushion(node, mats.accent, 0, 0.55, d * 0.29, w - 0.02, 0.063, d * 0.35);
-  for (const side of [-1, 1]) {
-    cushion(node, mats.ceramic, (w / 4) * side, 0.51, -d / 2 + 0.31, w * 0.4, 0.145, 0.39, 0.07).rotation.y = side * 0.035;
+  for (const x of w < 1.35 ? [0] : [-w / 4, w / 4]) {
+    cushion(node, mats.ceramic, x, 0.51, -d / 2 + 0.31, w * 0.4, 0.145, 0.39, 0.07).rotation.y = Math.sign(x) * 0.035;
   }
 }
 
@@ -75,8 +75,55 @@ function dining(node, item, tea = false) {
   }
 }
 
+function playMat(node, { w, d }) {
+  cushion(node, mats.linen, 0, 0.012, 0, w, 0.024, d, 0.008);
+  const colors = [mats.accent, mats.linen, mats.sofa];
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 3; col++) {
+      cushion(node, colors[(row + col) % colors.length], (col - 1) * w / 3, 0.029, (row - 0.5) * d / 2,
+        w / 3 - 0.008, 0.02, d / 2 - 0.008, 0.007);
+    }
+  }
+  cushion(node, mats.pillow, -0.57, 0.099, -0.41, 0.4, 0.12, 0.35, 0.05);
+  for (const [x, z, color] of [[0.39, -0.25, mats.wood], [0.58, -0.21, mats.pillow], [0.43, 0.03, mats.accent]]) {
+    cushion(node, color, x, 0.097, z, 0.14, 0.12, 0.14, 0.009);
+  }
+}
+
+function shelf(node, { w, d, h, shelves, bins }) {
+  const board = 0.024;
+  const level = (h - board) / shelves;
+  box(node, mats.wood, 0, h / 2, -d / 2 + board / 2, w, h, board);
+  for (const x of [-w / 2 + board / 2, 0, w / 2 - board / 2]) {
+    box(node, mats.oak, x, h / 2, board / 2, board, h, d - board);
+  }
+  for (let row = 0; row <= shelves; row++) {
+    box(node, mats.wood, 0, board / 2 + row * level, board / 2, w - board * 2, board, d - board);
+    if (row === shelves) break;
+    for (const x of [-w / 4, w / 4]) {
+      if (bins) {
+        cushion(node, x < 0 ? mats.sofa : mats.accent, x, board + row * level + 0.083, 0.01,
+          w / 2 - 0.11, 0.16, d - 0.10, 0.016);
+      } else {
+        for (const [i, color] of [mats.linen, mats.accent, mats.pillow].entries()) {
+          const height = 0.17 + 0.026 * i;
+          box(node, color, x + 0.053 * (i - 1), board + row * level + height / 2, -0.034, 0.046, height, 0.17);
+        }
+      }
+    }
+  }
+}
+
+function desk(node, { w, d, deskDepth }) {
+  const desktop = group(node, '书桌', 0, 0, (deskDepth - d) / 2);
+  table(desktop, w, deskDepth, 0.75);
+  box(desktop, mats.frame, -0.11, 0.761, -0.02, 0.34, 0.021, 0.24);
+  box(desktop, mats.linen, 0.47, 0.764, 0.045, 0.21, 0.028, 0.26);
+  chair(node, 0, d / 2 - 0.29, Math.PI);
+}
+
 const models = {
-  bed, wardrobe, sofa, dining,
+  bed, wardrobe, sofa, dining, shelf, desk, 'play-mat': playMat,
   tea: (node, item) => dining(node, item, true),
   coffee: (node, { w, d }) => {
     table(node, w, d, 0.35, mats.oak);

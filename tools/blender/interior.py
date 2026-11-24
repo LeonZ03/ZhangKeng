@@ -27,7 +27,7 @@ def bed_library():
 
 def bed(g, parent, item, library):
     w, d = item['w'], item['d']
-    accent = {'bed-nw': 'sage', 'bed-sw': 'umber', 'bed-se': 'linen', 'bed-up': 'sage'}[item['id']]
+    accent = {'bed-nw': 'sage', 'bed-sw': 'umber', 'bed-se': 'linen', 'bed-up': 'sage', 'study-bed': 'linen'}[item['id']]
     # The source bed runs along X with its head at negative X. The villa's bed
     # anchors expect the head at positive Y. Keep the adaptation below the anchor.
     across, along = w / 1.585, d / 2.508
@@ -35,7 +35,8 @@ def bed(g, parent, item, library):
                   (-along, 0, 0, -.748 * along),
                   (0, 0, 1, 0), (0, 0, 0, 1)))
     parent['furniture_provenance'] = 'BeiPiao / Courtyard43-furniture.blend / C43_Bed'
-    parent['adaptation'] = 'Rotated, footprint-resized, recolored, and fitted with matching twin pillows'
+    parent['adaptation'] = 'Rotated, footprint-resized and fitted with matching bedding'
+    pillow_offsets = (0,) if w < 1.35 else (-w * .233, w * .233)
     for source in library.objects:
         original = source['source_object'].removeprefix('C43_')
         mesh = source.data.copy()
@@ -65,8 +66,8 @@ def bed(g, parent, item, library):
         mesh.materials.append(g.m[material])
         name = original.replace('FloralDuvet', 'Duvet')
         if original.startswith(('CottonPillow', 'PillowPipedSeam')):
-            for side in (-1, 1):
-                obj = g.attach(parent, name, mesh, (side * w * .233 - center, 0, 0))
+            for offset in pillow_offsets:
+                obj = g.attach(parent, name, mesh, (offset - center, 0, 0))
                 obj['source_object'] = source['source_object']
         else:
             obj = g.attach(parent, name, mesh)
@@ -300,6 +301,68 @@ def coffee(g, parent, item):
     g.plate(parent, 'Low stoneware bowl', 'ceramic', (-.025, -.219, .366), .105, .035)
 
 
+def play_mat(g, parent, item):
+    w, d = item['w'], item['d']
+    g.box(parent, 'Bound fabric mat base', 'linen', (0, 0, .012), (w, d, .024), .008)
+    palette = ('sage', 'linen', 'sofa')
+    for row in range(2):
+        for column in range(3):
+            g.box(parent, 'Padded mat section', palette[(row + column) % len(palette)],
+                  ((column - 1) * w / 3, (row - .5) * d / 2, .029),
+                  (w / 3 - .008, d / 2 - .008, .020), .007)
+    g.box(parent, 'Floor cushion', 'umber', (-.57, .41, .099), (.40, .35, .12), .049, rotation=.12)
+    for x, y, finish, angle in [(.39, .25, 'oak', -.14), (.58, .21, 'umber', .19), (.43, -.03, 'sage', .32)]:
+        g.box(parent, 'Rounded play block', finish, (x, y, .099), (.14, .14, .12), .012, rotation=angle)
+    g.box(parent, 'Long play block', 'oak', (.15, .26, .071), (.20, .083, .064), .009, rotation=-.2)
+
+
+def shelf(g, parent, item):
+    w, d, h = item['w'], item['d'], item['h']
+    levels, board = item['shelves'], .024
+    step = (h - board) / levels
+    g.box(parent, 'Bookcase back', 'oak', (0, (d - board) / 2, h / 2), (w, board, h), .004)
+    for x in (-(w - board) / 2, (w - board) / 2):
+        g.box(parent, 'Timber side', 'oak', (x, -board / 2, h / 2), (board, d - board, h), .005)
+    for row in range(levels + 1):
+        g.box(parent, 'Timber shelf', 'oak', (0, -board / 2, board / 2 + step * row),
+              (w - 2 * board, d - board, board), .005, grain='x')
+    for row in range(levels):
+        base = board + step * row
+        g.box(parent, 'Shelf divider', 'oak', (0, -board / 2, base + (step - board) / 2),
+              (board, d - board, step - board), .004)
+        for x in (-w / 4, w / 4):
+            if item.get('bins'):
+                tone = 'sofa' if x < 0 else 'sage'
+                g.box(parent, 'Woven toy bin', tone, (x, -.01, base + .083),
+                      (w / 2 - .11, d - .10, .16), .016)
+                g.box(parent, 'Canvas bin pull', 'linen', (x, -.013 - (d - .10) / 2, base + .105),
+                      (.085, .015, .023), .004)
+            else:
+                for i, (height, tone) in enumerate(((.176, 'linen'), (.231, 'sage'), (.205, 'umber'), (.255, 'walnut'))):
+                    book_x = x + (i - 1.5) * .048
+                    g.box(parent, 'Cloth-bound book', tone, (book_x, .031, base + height / 2),
+                          (.041, .174, height), 0)
+
+
+def desk(g, parent, item):
+    w, d, depth = item['w'], item['d'], item['deskDepth']
+    center_y = (d - depth) / 2
+    g.box(parent, 'Rounded writing surface', 'oak', (0, center_y, .724), (w, depth, .052), .015, grain='x')
+    for x in (-w / 2 + .085, w / 2 - .085):
+        for y in (center_y - depth / 2 + .078, center_y + depth / 2 - .078):
+            g.box(parent, 'Oak desk leg', 'oak', (x, y, .349), (.058, .058, .698), .009)
+    g.box(parent, 'Rear stretcher', 'oak', (0, center_y + depth / 2 - .092, .668),
+          (w - .19, .035, .06), .005, grain='x')
+    g.box(parent, 'Shallow stationery drawer', 'oak', (.43, center_y - .018, .66),
+          (.355, .398, .076), .007, grain='x')
+    g.box(parent, 'Recessed graphite pull', 'graphite', (.43, center_y - .224, .661), (.084, .015, .018), .004)
+    g.box(parent, 'Laptop base', 'graphite', (-.11, center_y + .02, .757), (.325, .232, .014), .004)
+    g.box(parent, 'Closed laptop lid', 'sink', (-.11, center_y + .02, .767), (.326, .233, .006), .002)
+    g.box(parent, 'Desk notebook', 'sage', (.47, center_y - .045, .761), (.206, .254, .022), .005, rotation=.10)
+    g.box(parent, 'Notebook paper edge', 'linen', (.469, center_y - .047, .762), (.192, .248, .015), .002, rotation=.10)
+    chair(g, parent, 0, .29 - d / 2, pi)
+
+
 def floor_finishes(g):
     for story, node in [('ground', 'GroundFloor'), ('upper', 'UpperFloor')]:
         parent = g.ctx.nodes[node]
@@ -343,7 +406,8 @@ def floor_finishes(g):
 def refine(ctx):
     g = Geometry(ctx)
     library = bed_library()
-    models = {'wardrobe': wardrobe, 'sofa': sofa, 'coffee': coffee, 'dining': dining}
+    models = {'wardrobe': wardrobe, 'sofa': sofa, 'coffee': coffee, 'dining': dining,
+              'play-mat': play_mat, 'shelf': shelf, 'desk': desk}
     for item in ctx.plan['furnishings']:
         node = ctx.nodes[item['id']]
         clear_contents(node)

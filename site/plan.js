@@ -50,15 +50,15 @@ export const floors = {
   },
   upper: {
     tag: '2F', label: '二层', elevation: upperElevation, height: 2.64, size: [11.8, 10],
-    summary: '茶室、卧室、卫浴、南阳台和北晾台',
+    summary: '茶室、卧室、儿童娱乐区、书房兼卧室、卫浴、南阳台和北晾台',
     rooms: [
       { name: '茶室', bounds: [3.6, 2.2, 8.2, 7.7], finish: 'wood' },
       { name: '卧室', bounds: [0.1, 5.28, 3.4, 8.9], finish: 'wood' },
       { name: '卫生间', bounds: [0.1, 3.68, 2.35, 5.12], finish: 'bath' },
       { name: '北晾台', bounds: [3.6, 0.1, 8.2, 2.0], finish: 'stone' },
       { name: '南阳台', bounds: [3.6, 7.9, 8.2, 9.89], finish: 'stone' },
-      { name: '西北留白区', bounds: [0.1, 0.1, 3.4, 3.52], finish: 'tile', undecided: true },
-      { name: '东侧留白区', bounds: [8.4, 0.1, 11.7, 8.9], finish: 'tile', undecided: true },
+      { name: '儿童娱乐区', bounds: [0.1, 0.1, 3.4, 3.52], finish: 'tile', planned: true },
+      { name: '书房兼卧室', bounds: [8.4, 0.1, 11.7, 8.9], finish: 'tile', planned: true },
     ],
     walls: [
       wall('x', 0, -0.1, 3.5, [], true, 1.35),
@@ -96,6 +96,12 @@ export const furnishings = [
   { id: 'coffee', floor: 'ground', room: '客厅', name: '茶几', type: 'coffee', x: 6.65, z: 5.63, w: 0.63, d: 1.28, angle: 0 },
   { id: 'tea', floor: 'upper', room: '茶室', name: '茶桌与五把座椅', type: 'tea', x: 6.76, z: 5.63, w: 2.43, d: 3.64, angle: 0, tabletop: [1.1, 2.92] },
   { id: 'bed-up', floor: 'upper', room: '卧室', name: '双人床', type: 'bed', x: 1.16, z: 7.1, w: 1.8, d: 2, angle: 90 },
+  // Proposed placements for the two spaces left blank in the drawings.
+  { id: 'play-mat', floor: 'upper', room: '儿童娱乐区', name: '软垫与玩具', type: 'play-mat', x: 1.77, z: 1.38, w: 1.85, d: 1.48, angle: 0 },
+  { id: 'play-storage', floor: 'upper', room: '儿童娱乐区', name: '玩具收纳柜', type: 'shelf', x: 1.79, z: 0.35, w: 1.56, d: 0.4, h: 0.64, shelves: 2, bins: true, angle: 0 },
+  { id: 'study-desk', floor: 'upper', room: '书房兼卧室', name: '书桌与座椅', type: 'desk', x: 11.0, z: 4.69, w: 1.5, d: 1.27, deskDepth: 0.62, angle: -90 },
+  { id: 'study-shelf', floor: 'upper', room: '书房兼卧室', name: '书柜', type: 'shelf', x: 8.63, z: 4.78, w: 1.36, d: 0.37, h: 1.4, shelves: 3, angle: 90 },
+  { id: 'study-bed', floor: 'upper', room: '书房兼卧室', name: '单人床', type: 'bed', x: 10.58, z: 7.74, w: 1.2, d: 2.04, angle: 180 },
 ];
 
 export const baths = [

@@ -238,7 +238,8 @@ function makeViewer() {
     } else if (floors[state.floor]) {
       for (const room of floors[state.floor].rooms) {
         const [x1, z1, x2, z2] = room.bounds;
-        label({ x: (x1 + x2) / 2, y: 0.29, z: z1 * 0.47 + z2 * 0.53, track: model.building[state.floor].layer }, room.name, room.undecided ? 'unresolved' : '');
+        const text = room.planned ? `${room.name} · 规划` : room.name;
+        label({ x: (x1 + x2) / 2, y: 0.29, z: z1 * 0.47 + z2 * 0.53, track: model.building[state.floor].layer }, text, room.planned ? 'planned' : '');
       }
     } else if (state.floor === 'yard' && state.phase === 'proposal') {
       label({ x: -2.36, y: 2.46, z: -4.5 }, '户外厨房');
