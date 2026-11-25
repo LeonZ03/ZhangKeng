@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { baths, furnishings } from './plan.js';
-import { addMesh, box, cushion, group, mats, outline, plant, post, round } from './geometry.js';
+import { addMesh, beam, box, cushion, group, mats, outline, plant, post, round } from './geometry.js';
 
 function bed(node, { id, w, d }) {
   box(node, mats.oak, 0, 0.17, 0, w, 0.26, d);
@@ -55,38 +55,80 @@ function massageChair(node, { w, d, h }) {
   cushion(node, mats.steel, 0.30, 0.656, 0.242, 0.078, 0.023, 0.106, 0.011);
 }
 
-export function chair(parent, x, z, angle = 0, upholstered = false) {
+export function chair(parent, x, z, angle = 0) {
   const node = group(parent, '座椅', x, 0, z);
   node.rotation.y = angle;
   for (const x of [-0.17, 0.17]) {
     for (const z of [-0.15, 0.15]) box(node, mats.oak, x, 0.216, z, 0.044, 0.432, 0.044);
     box(node, mats.oak, x, 0.66, -0.175, 0.04, 0.45, 0.04);
   }
-  cushion(node, upholstered ? mats.accent : mats.sofa, 0, 0.445, 0, 0.425, 0.075, 0.425);
-  cushion(node, upholstered ? mats.accent : mats.oak, 0, 0.777, -0.178, 0.41, 0.205, 0.046);
+  cushion(node, mats.sofa, 0, 0.445, 0, 0.425, 0.075, 0.425);
+  cushion(node, mats.oak, 0, 0.777, -0.178, 0.41, 0.205, 0.046);
   return node;
 }
 
-function table(node, w, d, height, material = mats.wood) {
+function teaChair(parent, pose, seating) {
+  const { x, z, angle, host } = pose;
+  const [w, d, h] = host ? seating.host : seating.guest;
+  const node = group(parent, host ? '主人椅' : '圈椅', x, 0, z);
+  node.rotation.y = THREE.MathUtils.degToRad(angle);
+  const wood = mats.teaWood, seat = host ? 0.466 : 0.448;
+  const seatW = w * (host ? 0.85 : 0.925), seatD = d * (host ? 0.82 : 0.91);
+  const corner = seatW / 2 - 0.028, front = seatD / 2 - 0.032, rear = -seatD / 2 + 0.036;
+  cushion(node, wood, 0, seat - 0.022, 0, seatW, 0.044, seatD, 0.015);
+  cushion(node, mats.teaPanel, 0, seat + 0.004, 0, seatW - 0.048, 0.014, seatD - 0.052, 0.006);
+  const rail = (points, radius) => {
+    const curve = new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3(...point)));
+    addMesh(node, new THREE.TubeGeometry(curve, 32, radius, 8, false), wood);
+  };
+  const crest = host ? t => [t * (w / 2 - 0.019), h - 0.019 - 0.029 * Math.sin(Math.PI * Math.abs(t)), -0.441 * d + 0.017 * t * t]
+    : t => {
+      const drop = (1 - Math.cos(t)) / (1 - Math.cos(1.67));
+      return [(w / 2 - 0.017) * Math.sin(t), h - 0.016 - (h - 0.686) * drop, -d * (0.439 - 0.827 * drop)];
+    };
+  const span = host ? 1 : 1.67;
+  rail(Array.from({ length: 17 }, (_, i) => crest(span * (i / 8 - 1))), host ? 0.0175 : 0.016);
+  const backH = h - seat - 0.021;
+  cushion(node, mats.teaPanel, 0, seat + backH / 2, -d * 0.38, w * (host ? 0.29 : 0.22), backH, 0.025, 0.008).rotation.x = -0.12;
+  for (const side of [-1, 1]) {
+    const leg = side * corner;
+    post(node, wood, leg, seat / 2, front, host ? 0.019 : 0.016, seat);
+    const back = crest(side * (host ? 0.82 : 0.68));
+    rail([[leg, 0, rear - 0.01], [leg, seat, rear], back], host ? 0.020 : 0.0165);
+    let tip = crest(side * 1.43);
+    if (host) {
+      tip = [side * w * 0.46, 0.695, d * 0.39];
+      rail([[side * w * 0.38, 0.781, -d * 0.35], [side * w * 0.43, 0.755, 0], tip], 0.018);
+    }
+    beam(node, wood, [leg, seat, front], tip, host ? 0.024 : 0.017);
+    beam(node, wood, [leg, 0.176, front], [leg, 0.195, rear], 0.022);
+  }
+  beam(node, wood, [-corner, 0.145, front], [corner, 0.145, front], 0.024);
+}
+
+function table(node, w, d, height, material = mats.wood, frame = mats.oak) {
   cushion(node, material, 0, height - 0.03, 0, w, 0.06, d, 0.02);
   for (const x of [-w / 2 + 0.12, w / 2 - 0.12]) {
-    for (const z of [-d / 2 + 0.12, d / 2 - 0.12]) box(node, mats.oak, x, height / 2 - 0.02, z, 0.075, height - 0.04, 0.075);
+    for (const z of [-d / 2 + 0.12, d / 2 - 0.12]) box(node, frame, x, height / 2 - 0.02, z, 0.075, height - 0.04, 0.075);
   }
 }
 
 function dining(node, item, tea = false) {
   const [w, d] = item.tabletop;
-  table(node, w, d, 0.755, tea ? mats.oak : mats.wood);
-  chair(node, 0, -d / 2 - 0.18, 0, tea);
-  for (const z of [-d * 0.32, 0, d * 0.32]) chair(node, -w / 2 - 0.2, z, Math.PI / 2, tea);
   if (tea) {
-    chair(node, w / 2 + 0.28, 0, -Math.PI / 2, true);
+    table(node, w, d, 0.755, mats.teaWood, mats.teaWood);
+    for (const pose of item.seating.positions) teaChair(node, pose, item.seating);
     box(node, mats.wood, 0, 0.77, -0.2, 0.34, 0.035, 0.69);
     round(node, mats.ceramic, 0, 0.845, -0.3, 0.095, 0.07, 0.095);
     for (const x of [-0.107, 0.107]) post(node, mats.ceramic, x, 0.811, 0.01, 0.043, 0.035);
   } else {
+    table(node, w, d, 0.755);
+    chair(node, 0, -d / 2 - 0.18);
     chair(node, 0, d / 2 + 0.18, Math.PI);
-    for (const z of [-d * 0.32, 0, d * 0.32]) chair(node, w / 2 + 0.2, z, -Math.PI / 2);
+    for (const z of [-d * 0.32, 0, d * 0.32]) {
+      chair(node, -w / 2 - 0.2, z, Math.PI / 2);
+      chair(node, w / 2 + 0.2, z, -Math.PI / 2);
+    }
     for (const x of [-0.3, 0.3]) {
       for (const z of [-0.65, 0, 0.65]) post(node, mats.ceramic, x, 0.768, z, 0.111, 0.016);
     }

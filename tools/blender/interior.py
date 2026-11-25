@@ -10,6 +10,7 @@ from mathutils.bvhtree import BVHTree
 
 from interior_fixtures import fixtures
 from interior_geometry import Geometry, rounded_outline
+from tea_furniture import tea_chairs
 
 
 def clear_contents(parent):
@@ -282,11 +283,11 @@ def soft_pillow(g, parent, x, y, z, color):
     return pillow
 
 
-def chair(g, parent, x, y, angle, tea=False):
-    seat = g.group(parent, 'Tea armchair' if tea else 'Dining chair', (x, y, 0), angle)
-    color = 'walnut' if tea else 'oak'
+def chair(g, parent, x, y, angle):
+    seat = g.group(parent, 'Dining chair', (x, y, 0), angle)
+    color = 'oak'
     g.box(seat, 'Seat frame', color, (0, 0, .427), (.412, .408, .054), .013, grain='x')
-    g.box(seat, 'Loose seat pad', 'sage' if tea else 'sofa', (0, -.011, .471), (.398, .393, .065), .027)
+    g.box(seat, 'Loose seat pad', 'sofa', (0, -.011, .471), (.398, .393, .065), .027)
     for sign in [-1, 1]:
         x = sign * .159
         leg = g.box(seat, 'Tapered front support', color, (x, -.157, .223), (.033, .039, .435), .006)
@@ -294,10 +295,7 @@ def chair(g, parent, x, y, angle, tea=False):
         leg = g.box(seat, 'Angled back support', color, (x, .173, .426), (.041, .037, .847), .008)
         leg.rotation_euler.x = -.11
         g.box(seat, 'Side stretcher', color, (x, .001, .324), (.025, .322, .028), .004, grain='y')
-        if tea:
-            g.box(seat, 'Arm support', color, (sign * .205, -.103, .53), (.026, .029, .234), .005)
-            g.box(seat, 'Rounded armrest', color, (sign * .207, .004, .653), (.054, .353, .040), .017, grain='y')
-    back = g.box(seat, 'Backrest ' + ('cushion' if tea else 'rail'), 'sage' if tea else color,
+    back = g.box(seat, 'Backrest rail', color,
                  (0, .190, .742), (.37, .059, .173), .027, grain='x')
     back.rotation_euler.x = -.13
 
@@ -305,7 +303,7 @@ def chair(g, parent, x, y, angle, tea=False):
 def dining(g, parent, item, tea=False):
     w, d = item['tabletop']
     top = .759
-    finish = 'walnut' if tea else 'oak'
+    finish = 'teaWood' if tea else 'oak'
     g.box(parent, 'Solid timber slab', finish, (0, 0, top - .027), (w, d, .054), .017, grain='y')
     for sign in [-1, 1]:
         y = sign * (d / 2 - .157)
@@ -314,16 +312,15 @@ def dining(g, parent, item, tea=False):
         g.box(parent, 'Long apron', finish, (x, 0, .671), (.040, d - .307, .082), .007, grain='y')
         for leg_y in (-abs(y), abs(y)):
             g.box(parent, 'Recessed solid wood leg', finish, (x, leg_y, .364), (.077, .077, .719), .011)
-    chair(g, parent, 0, d / 2 + .171, 0, tea)
-    for y in [-d * .319, 0, d * .319]:
-        chair(g, parent, -w / 2 - .201, y, pi / 2, tea)
-        if not tea:
-            chair(g, parent, w / 2 + .201, y, -pi / 2)
     if tea:
-        chair(g, parent, w / 2 + .270, 0, -pi / 2, True)
+        tea_chairs(g, parent, item['seating'])
         tea_set(g, parent, top)
     else:
+        chair(g, parent, 0, d / 2 + .171, 0)
         chair(g, parent, 0, -d / 2 - .171, pi)
+        for y in [-d * .319, 0, d * .319]:
+            chair(g, parent, -w / 2 - .201, y, pi / 2)
+            chair(g, parent, w / 2 + .201, y, -pi / 2)
         for x in [-.297, .297]:
             for y in [-.632, 0, .632]:
                 g.plate(parent, 'Stoneware dining plate', 'ceramic', (x, y, top), .106)

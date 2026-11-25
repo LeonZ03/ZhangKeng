@@ -100,6 +100,19 @@ const playToys = {
   ],
 };
 
+// Width, depth and height, with positions relative to the table centre.
+const teaSeating = {
+  guest: [0.54, 0.48, 0.91],
+  host: [0.68, 0.60, 1.11],
+  positions: [
+    { x: 0, z: -1.72, angle: 0 },
+    { x: -0.818, z: -0.93, angle: 90 },
+    { x: -0.818, z: 0, angle: 90 },
+    { x: -0.818, z: 0.93, angle: 90 },
+    { x: 0.895, z: 0, angle: -90, host: true },
+  ],
+};
+
 // Footprints of drawn furniture were scaled from the 1:50 sheets where dimensions are absent.
 // x and z are centres before rotation. Footprints include seating where supplied as a set.
 export const furnishings = [
@@ -114,7 +127,7 @@ export const furnishings = [
   { id: 'sofa-short', floor: 'ground', room: '客厅', name: '双人沙发', type: 'sofa', x: 6.47, z: 7.2, w: 1.58, d: 0.78, angle: 180, orientationVersion: 1 },
   { id: 'massage-chair', floor: 'ground', room: '客厅', name: '黑色按摩椅', type: 'massage-chair', x: 6.36, z: 4.40, w: 0.75, d: 1.51, h: 1.12, angle: -45 },
   { id: 'coffee', floor: 'ground', room: '客厅', name: '茶几', type: 'coffee', x: 6.65, z: 5.63, w: 0.63, d: 1.28, angle: 0 },
-  { id: 'tea', floor: 'upper', room: '茶室', name: '茶桌与五把座椅', type: 'tea', x: 6.76, z: 5.63, w: 2.43, d: 3.64, angle: 0, tabletop: [1.1, 2.92] },
+  { id: 'tea', floor: 'upper', room: '茶室', name: '茶桌与五把实木椅', type: 'tea', x: 6.76, z: 5.63, w: 2.43, d: 3.94, angle: 0, tabletop: [1.1, 2.92], seating: teaSeating },
   { id: 'bed-up', floor: 'upper', room: '卧室', name: '双人床', type: 'bed', x: 1.16, z: 7.1, w: 1.8, d: 2, angle: 90 },
   // Proposed placements for the two spaces left blank in the drawings.
   { id: 'play-mat', floor: 'upper', room: '儿童娱乐区', name: '软垫与玩具', type: 'play-mat', x: 1.77, z: 1.38, w: 1.85, d: 1.48, angle: 0, toys: playToys },

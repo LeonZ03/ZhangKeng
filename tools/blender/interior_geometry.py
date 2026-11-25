@@ -80,6 +80,8 @@ def maps(artifacts):
     finishes = [
         ('oak', 'European oak · rift sawn', (170, 128, 89), .49, grain),
         ('walnut', 'Black walnut · oiled', (110, 75, 47), .44, grain),
+        ('teaWood', 'Tea furniture · warm satin hardwood', (126, 78, 57), .41, grain * 1.12),
+        ('teaPanel', 'Tea furniture · figured wood panels', (139, 91, 63), .45, grain * 1.19),
         ('floorwood', 'White oak · matte floorboards', (178, 143, 105), .61, grain * 1.28),
         ('limestone', 'Limestone · honed', (203, 186, 162), .63, cloud * 1.22),
         ('bathfloor', 'Sage porcelain · satin', (170, 178, 172), .53, cloud),
@@ -181,7 +183,7 @@ class Geometry:
             layer = mesh.uv_layers.new()
             grain_axis = 'xyz'.index(grain)
             woven = mat in {'sofa', 'linen', 'sage', 'umber', 'dustyBlue', 'taupe', 'massage_leather'}
-            wood = mat in {'oak', 'walnut', 'floorwood'}
+            wood = mat in {'oak', 'walnut', 'teaWood', 'teaPanel', 'floorwood'}
             scale = (8, 8) if woven else (2.8, .72) if wood else (1.8, 1.8)
             shift = (.5 + .245 * at[0] + .461 * at[1] + .307 * at[2], .5) if wood else (.5, .5)
             for poly in mesh.polygons:
