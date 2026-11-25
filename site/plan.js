@@ -91,8 +91,8 @@ export const furnishings = [
   { id: 'wardrobe-se', floor: 'ground', room: '东南卧室', name: '衣柜', type: 'wardrobe', x: 10.65, z: 5.53, w: 2.1, d: 0.53, angle: 0 },
   { id: 'dining', floor: 'ground', room: '餐厅', name: '八人餐桌组', type: 'dining', x: 5.24, z: 1.75, w: 1.85, d: 2.8, angle: 0, tabletop: [1, 2] },
   { id: 'sofa-long', floor: 'ground', room: '客厅', name: '三人沙发', type: 'sofa', x: 7.72, z: 5.63, w: 2.23, d: 0.78, angle: -90 },
-  { id: 'sofa-short', floor: 'ground', room: '客厅', name: '双人沙发', type: 'sofa', x: 6.47, z: 7.2, w: 1.58, d: 0.78, angle: 180 },
-  { id: 'sofa-chair', floor: 'ground', room: '客厅', name: '单人沙发', type: 'sofa', x: 6.65, z: 3.99, w: 0.86, d: 1.22, angle: 0 },
+  { id: 'sofa-short', floor: 'ground', room: '客厅', name: '双人沙发', type: 'sofa', x: 6.47, z: 7.2, w: 1.58, d: 0.78, angle: 180, orientationVersion: 1 },
+  { id: 'massage-chair', floor: 'ground', room: '客厅', name: '黑色按摩椅', type: 'massage-chair', x: 6.36, z: 4.40, w: 0.75, d: 1.51, h: 1.12, angle: -45 },
   { id: 'coffee', floor: 'ground', room: '客厅', name: '茶几', type: 'coffee', x: 6.65, z: 5.63, w: 0.63, d: 1.28, angle: 0 },
   { id: 'tea', floor: 'upper', room: '茶室', name: '茶桌与五把座椅', type: 'tea', x: 6.76, z: 5.63, w: 2.43, d: 3.64, angle: 0, tabletop: [1.1, 2.92] },
   { id: 'bed-up', floor: 'upper', room: '卧室', name: '双人床', type: 'bed', x: 1.16, z: 7.1, w: 1.8, d: 2, angle: 90 },
@@ -101,7 +101,8 @@ export const furnishings = [
   { id: 'play-storage', floor: 'upper', room: '儿童娱乐区', name: '玩具收纳柜', type: 'shelf', x: 1.79, z: 0.35, w: 1.56, d: 0.4, h: 0.64, shelves: 2, bins: true, angle: 0 },
   { id: 'study-desk', floor: 'upper', room: '书房兼卧室', name: '书桌与座椅', type: 'desk', x: 11.0, z: 4.69, w: 1.5, d: 1.27, deskDepth: 0.62, angle: -90 },
   { id: 'study-shelf', floor: 'upper', room: '书房兼卧室', name: '书柜', type: 'shelf', x: 8.63, z: 4.78, w: 1.36, d: 0.37, h: 1.4, shelves: 3, angle: 90 },
-  { id: 'study-bed', floor: 'upper', room: '书房兼卧室', name: '单人床', type: 'bed', x: 10.58, z: 7.74, w: 1.2, d: 2.04, angle: 180 },
+  { id: 'study-bed', floor: 'upper', room: '书房兼卧室', name: '单人床', type: 'bed', x: 10.58, z: 7.74, w: 1.2, d: 2.04, angle: 90, orientationVersion: 1 },
+  { id: 'study-low-cabinets', floor: 'upper', room: '书房兼卧室', name: '矮柜', type: 'low-cabinet', x: 11.44, z: 1.41, w: 2.28, d: 0.42, h: 0.69, doors: 4, angle: -90 },
 ];
 
 export const baths = [

@@ -121,7 +121,9 @@ function paving(parent) {
       [0.23, -2.98], [-0.76, -2.98]], 0],
     [rect(6.7, -1.69, 8.14, 0), 0.12],
   ];
-  for (const [poly, height] of paths) plate(pavingSurface, mats.paving, poly, datum + height, 0.075);
+  for (const [poly, height] of paths) {
+    plate(pavingSurface, height ? mats.pavingJoint : mats.paving, poly, datum + height, 0.075);
+  }
   for (const [x1, z1, x2, z2, y] of [[-3.73, 0, -0.13, 11.61, 0.122], [11.93, 0, 13.52, 11.61, 0.122], [-0.13, 9.12, 11.93, 11.65, 0.122], [8.58, -2.4, 13.5, -0.13, 0.002]]) {
     const spacing = 0.61;
     let row = 0;
@@ -130,7 +132,8 @@ function paving(parent) {
       let col = 0;
       for (let x = x1; x < x2 - 0.02;) {
         const width = Math.min(col === 0 && row % 2 ? spacing / 2 : spacing, x2 - x);
-        box(pavingSurface, slabs[(col * 5 + row * 7 + (col ^ row)) % slabs.length], x + width / 2, datum + y, z + depth / 2, width - 0.011, 0.016, depth - 0.011);
+        const finish = y > 0.1 ? mats.slatePaving : slabs[(col * 5 + row * 7 + (col ^ row)) % slabs.length];
+        box(pavingSurface, finish, x + width / 2, datum + y, z + depth / 2, width - 0.011, 0.016, depth - 0.011);
         x += width;
         col++;
       }

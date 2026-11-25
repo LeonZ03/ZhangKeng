@@ -77,13 +77,21 @@ class Surfaces:
         mid = noise(rng, u, v, 30, 30)
         fine = noise(rng, u, v, 140, 140)
         grain = rng.standard_normal(u.shape)
-        if kind == "wood":
+        if kind in {"wood", "fir"}:
             warp = noise(rng, u, v, 5, 9) * 0.011
+            knots = np.zeros_like(u)
+            if kind == "fir":
+                for x, y in ((.16, .14), (.71, .36), (.35, .69), (.89, .91)):
+                    dx = (u - x + .5) % 1 - .5
+                    dy = (v - y + .5) % 1 - .5
+                    knot_radius = (dx / .017) ** 2 + (dy / .022) ** 2
+                    knots += np.exp(-knot_radius) + .26 * np.exp(-8 * (np.sqrt(knot_radius) - 1.6) ** 2)
+                    warp += dy * np.exp(-((dx / .08) ** 2 + (dy / .047) ** 2)) * .9
             stripe = noise(rng, u, v + warp, 6, 112)
             fibers = noise(rng, u, v + warp, 21, 148)
             latewood = np.sin(2 * np.pi * (v * 39 + warp * 36)) ** 14
-            variation = stripe * 8 + fibers * 6 - latewood * 9 + coarse * 3 + grain * 2
-            relief = stripe * 0.008 + fibers * 0.009 - latewood * 0.012 + grain * 0.003
+            variation = stripe * 8 + fibers * 6 - latewood * 9 + coarse * 3 + grain * 2 - knots * 56
+            relief = stripe * 0.008 + fibers * 0.009 - latewood * 0.012 + grain * 0.003 - knots * .011
         elif kind == "stucco":
             stones = np.maximum(0, fine + grain * 0.33)
             variation = coarse * 2 + mid * 2 + fine * 8 + grain * 7

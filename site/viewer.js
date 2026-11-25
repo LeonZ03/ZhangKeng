@@ -40,9 +40,12 @@ connectPhoneSettings();
 function loadPlacements() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
-    return new Map([...items.keys()].flatMap(id => {
-      const item = saved?.[id];
-      return item && [item.x, item.z, item.angle].every(Number.isFinite) ? [[id, item]] : [];
+    return new Map(furnishings.flatMap(item => {
+      const placement = saved?.[item.id];
+      if (!placement || ![placement.x, placement.z, placement.angle].every(Number.isFinite)) return [];
+      // Apply the revised orientation to earlier layouts while retaining their placement coordinates.
+      const updateOrientation = item.orientationVersion && placement.orientationVersion !== item.orientationVersion;
+      return [[item.id, updateOrientation ? { ...placement, angle: item.angle } : placement]];
     }));
   } catch {
     return new Map();
@@ -52,11 +55,17 @@ function loadPlacements() {
 function clampPlacement(item, x, z, angle) {
   const room = floors[item.floor].rooms.find(room => room.name === item.room);
   const [left, back, right, front] = room.bounds;
-  const turn = ((Math.round(angle / 90) * 90) % 360 + 360) % 360;
-  const rotated = turn % 180 !== 0;
-  const halfW = Math.min((rotated ? item.d : item.w) / 2, (right - left) / 2);
-  const halfD = Math.min((rotated ? item.w : item.d) / 2, (front - back) / 2);
-  return { x: THREE.MathUtils.clamp(x, left + halfW, right - halfW), z: THREE.MathUtils.clamp(z, back + halfD, front - halfD), angle: turn };
+  const turn = ((angle % 360) + 360) % 360;
+  const radians = THREE.MathUtils.degToRad(turn);
+  const c = Math.abs(Math.cos(radians)), s = Math.abs(Math.sin(radians));
+  const halfW = Math.min((item.w * c + item.d * s) / 2, (right - left) / 2);
+  const halfD = Math.min((item.w * s + item.d * c) / 2, (front - back) / 2);
+  return {
+    x: THREE.MathUtils.clamp(x, left + halfW, right - halfW),
+    z: THREE.MathUtils.clamp(z, back + halfD, front - halfD),
+    angle: turn,
+    ...(item.orientationVersion && { orientationVersion: item.orientationVersion }),
+  };
 }
 
 function makeViewer() {
@@ -155,7 +164,8 @@ function makeViewer() {
     const node = model.furniture.get(item.id);
     node.position.x = value.x;
     node.position.z = value.z;
-    node.rotation.y = value.angle * Math.PI / 180;
+    // The GLB quaternion can decompose into nonzero X and Z angles even for a pure yaw.
+    node.rotation.set(0, value.angle * Math.PI / 180, 0);
     return value;
   }
 

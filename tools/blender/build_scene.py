@@ -208,8 +208,14 @@ def add_presentation(ctx):
 @contextmanager
 def web_model(ctx):
     """Combine opaque meshes within each switchable layer or furniture anchor."""
-    originals = {obj: name for name, obj in ctx.nodes.items()}
-    for obj in ctx.nodes["Villa"].children_recursive:
+    # Keep the earlier courtyard state in the editable scene. The website displays the construction plan.
+    previous_yard = ctx.nodes["YardExisting"]
+    editable_only = {previous_yard, *previous_yard.children_recursive}
+    originals = {obj: name for name, obj in ctx.nodes.items() if obj not in editable_only}
+    source_root = ctx.nodes["Villa"]
+    for obj in source_root.children_recursive:
+        if obj in editable_only:
+            continue
         if obj.get("exploreAction"):
             originals.setdefault(obj, obj.name)
     collection = bpy.data.collections.new("临时网页导出")
@@ -254,9 +260,8 @@ def web_model(ctx):
             clone.matrix_basis = (parent.matrix_world.inverted_safe() @ source.matrix_world) if parent else source.matrix_world.copy()
 
         depsgraph = bpy.context.evaluated_depsgraph_get()
-        source_root = ctx.nodes["Villa"]
         for source in source_root.children_recursive:
-            if source.type != "MESH":
+            if source in editable_only or source.type != "MESH":
                 continue
             mesh = bpy.data.meshes.new_from_object(source.evaluated_get(depsgraph), preserve_all_data_layers=True, depsgraph=depsgraph)
             clone = bpy.data.objects.new(source.name, mesh)

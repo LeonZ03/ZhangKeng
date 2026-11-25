@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { floors, roof, upperElevation } from './plan.js';
-import { addMesh, beam, box, group, mats, outline, plate } from './geometry.js';
+import { addMesh, beam, box, group, mats, outline, plate, round } from './geometry.js';
 import { buildFurniture } from './furniture.js';
 import { buildGarden } from './garden.js';
 
@@ -76,6 +76,12 @@ function frameOpening(parent, wall, opening, clip) {
     axisBox(parent, mats.trim, wall, end - 0.003, end + 0.065, sill, top, edge);
     if (hasHead) axisBox(parent, mats.trim, wall, start - 0.065, end + 0.065, top, top + 0.058, edge);
     if (sill > 0) axisBox(parent, mats.sill, wall, start - 0.064, end + 0.064, sill - 0.049, sill, edge + 0.09);
+    if (type === 'window' && hasHead) {
+      const lip = (wall.position === 0 ? -1 : 1) * (edge / 2 + 0.005);
+      axisBox(parent, mats.trim, wall, start - 0.057, start - 0.039, sill, top + 0.024, 0.012, lip);
+      axisBox(parent, mats.trim, wall, end + 0.039, end + 0.057, sill, top + 0.024, 0.012, lip);
+      axisBox(parent, mats.trim, wall, start - 0.057, end + 0.057, top + 0.024, top + 0.042, 0.012, lip);
+    }
   }
   axisBox(parent, frame, wall, start, start + fw, innerBottom, innerTop, thickness);
   axisBox(parent, frame, wall, end - fw, end, innerBottom, innerTop, thickness);
@@ -93,6 +99,8 @@ function frameOpening(parent, wall, opening, clip) {
         if (!southFacade) axisBox(parent, frame, wall, start + fw, left, sill + 1.03, barTop, thickness);
         axisBox(parent, frame, wall, right, end - fw, sill + 1.03, barTop, thickness);
       }
+    } else if (wall.exterior && wall.axis === 'z' && wall.position === 0 && type === 'window' && height === 1.4) {
+      axisBox(parent, frame, wall, start + fw, end - fw, sill + 0.53, sill + 0.566, thickness);
     }
     const glass = axisBox(parent, mats.window, wall, start + fw, end - fw, innerBottom, innerTop, 0.021);
     if (glass) glass.castShadow = false;
@@ -136,7 +144,7 @@ function walls(parent, floor, cut) {
 }
 
 function groundWallTrim(parent) {
-  const bands = [[mats.footer, 0.002, 0.18, 0.004],
+  const bands = [[mats.footer, -0.155, 0.205, 0.004],
     ...[0.38, 0.434, 1.17, 1.225, 2, 2.05, 2.82].map(y => [mats.trim, y, y + 0.014, 0.002])];
   const cornerOffsets = groundOutline.map((_, index, points) => {
     const [px, pz] = points.at(index - 1);
@@ -200,18 +208,51 @@ function balcony(parent, cut) {
   }
 }
 
+function stairGuardrail(parent, bottom, landing, firstZ, landingZ) {
+  const railing = group(parent, '西侧楼梯与平台栏杆');
+  const material = mats.stairRail;
+  const outside = -1.09, railHeight = 0.96, lowerRail = 0.075;
+  const foot = new THREE.Vector3(outside, bottom, firstZ);
+  const top = new THREE.Vector3(outside, landing, landingZ);
+  const corner = new THREE.Vector3(outside, landing, 2.48);
+  const wallEnd = new THREE.Vector3(-0.14, landing, 2.48);
+
+  const upright = (at, low, high, width) =>
+    box(railing, material, at.x, at.y + (low + high) / 2, at.z, width, high - low, width);
+  const segment = (a, b, divisions, sloped = false) => {
+    const atHeight = (point, height) => [point.x, point.y + height, point.z];
+    beam(railing, material, atHeight(a, railHeight), atHeight(b, railHeight), 0.038, 0.024);
+    beam(railing, material, atHeight(a, lowerRail), atHeight(b, lowerRail), 0.029, 0.026);
+    for (let i = 1; i < divisions; i++) {
+      const at = a.clone().lerp(b, i / divisions);
+      const mounted = sloped && i % 9 === 0;
+      upright(at, mounted ? -0.12 : lowerRail, railHeight, mounted ? 0.039 : 0.015);
+    }
+  };
+  segment(foot, top, 36, true);
+  segment(top, corner, 9);
+  segment(corner, wallEnd, 8);
+  for (const at of [foot, top, corner, wallEnd]) {
+    upright(at, 0, railHeight + 0.014, 0.052);
+    upright(at, 0, 0.008, 0.066);
+  }
+  round(railing, material, foot.x, foot.y + railHeight + 0.035, foot.z, 0.028, 0.027, 0.028);
+}
+
 function stairs(parent) {
   const top = group(parent, '西侧室外木梯');
   const step = 0.25, rise = 3.45 / 18, bottom = -0.15;
+  const firstZ = 7.85, landingZ = 3.615;
   for (let i = 0; i < 17; i++) {
     const elevation = bottom + (i + 1) * rise;
     const depth = i < 2 ? elevation - bottom : 0.067;
     const treadDepth = i < 2 ? step : step + 0.012;
-    box(top, i < 2 ? mats.cement : mats.timber, -0.61, elevation - depth / 2, 7.85 - step * i, 1.02, depth, treadDepth);
-    if (i >= 2) box(top, mats.wood, -0.61, elevation + 0.003, 7.85 - step * i, 1.01, 0.011, step + 0.013);
+    box(top, i < 2 ? mats.slatePaving : mats.timber, -0.61, elevation - depth / 2, firstZ - step * i, 1.02, depth, treadDepth);
+    if (i >= 2) box(top, mats.wood, -0.61, elevation + 0.003, firstZ - step * i, 1.01, 0.011, step + 0.013);
   }
   for (const x of [-1.095, -0.13]) beam(top, mats.oak, [x, 0.22, 7.63], [x, 3.17, 3.54], 0.098, 0.19);
-  box(top, mats.cement, -0.6, 3.21, 3.015, 1.17, 0.18, 1.2);
+  box(top, mats.cement, -0.6, upperElevation - 0.09, landingZ - 0.6, 1.17, 0.18, 1.2);
+  stairGuardrail(top, bottom + rise, upperElevation, firstZ, landingZ);
 }
 
 function floorSlabs(parent, id) {
@@ -225,10 +266,10 @@ function floorSlabs(parent, id) {
     box(parent, mats[room.finish], (x1 + x2) / 2, 0.006, (z1 + z2) / 2, x2 - x1, 0.012, z2 - z1);
   }
   if (id === 'ground') {
-    box(parent, mats.cement, 5.9, -0.105, 8.9, 5.0, 0.17, 2.2);
-    box(parent, mats.stone, 5.9, -0.125, 10.085, 4.96, 0.114, 0.18);
-    box(parent, mats.cement, 7.58, -0.084, -0.37, 1.55, 0.128, 0.62);
-    box(parent, mats.stone, 7.58, -0.173, -0.78, 1.53, 0.126, 0.28);
+    box(parent, mats.slatePaving, 5.9, -0.105, 8.9, 5.0, 0.17, 2.2);
+    box(parent, mats.slatePaving, 5.9, -0.125, 10.085, 4.96, 0.114, 0.18);
+    box(parent, mats.slatePaving, 7.58, -0.084, -0.37, 1.55, 0.128, 0.62);
+    box(parent, mats.slatePaving, 7.58, -0.173, -0.78, 1.53, 0.126, 0.28);
   } else {
     // The fascia occupies the slab's front section, so only stone reaches z = balconyEdge.
     box(parent, mats.trim, 5.9, -0.11, balconyEdge - balconyFasciaDepth / 2, 5.01, 0.24, balconyFasciaDepth);

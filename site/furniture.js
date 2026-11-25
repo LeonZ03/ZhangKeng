@@ -37,6 +37,21 @@ function sofa(node, { w, d }) {
   }
 }
 
+function massageChair(node, { w, d, h }) {
+  cushion(node, mats.frame, 0, 0.095, -0.07, w * 0.89, 0.19, d * 0.65, 0.07);
+  cushion(node, mats.frame, 0, 0.31, -0.084, w * 0.9, 0.34, d * 0.68, 0.12);
+  cushion(node, mats.frame, 0, h - 0.398, -0.33, w * 0.79, 0.77, 0.24, 0.112).rotation.x = -0.39;
+  cushion(node, mats.stairRail, 0, 0.484, -0.07, w * 0.66, 0.112, 0.56, 0.052);
+  cushion(node, mats.stairRail, 0, 0.789, -0.222, 0.43, 0.50, 0.123, 0.06).rotation.x = -0.39;
+  cushion(node, mats.stairRail, 0, 1.004, -0.37, 0.31, 0.165, 0.105, 0.047).rotation.x = -0.39;
+  for (const side of [-1, 1]) {
+    cushion(node, mats.frame, side * (w / 2 - 0.075), 0.475, -0.046, 0.15, 0.36, 0.84, 0.069);
+    cushion(node, mats.frame, side * 0.148, 0.25, 0.53, 0.276, 0.42, 0.258, 0.07).rotation.x = -0.38;
+    cushion(node, mats.stairRail, side * 0.148, 0.112, 0.648, 0.263, 0.166, 0.21, 0.061);
+  }
+  cushion(node, mats.steel, 0.30, 0.656, 0.242, 0.078, 0.023, 0.106, 0.011);
+}
+
 export function chair(parent, x, z, angle = 0, upholstered = false) {
   const node = group(parent, '座椅', x, 0, z);
   node.rotation.y = angle;
@@ -104,10 +119,20 @@ function shelf(node, { w, d, h, shelves, bins }) {
       if (bins) {
         cushion(node, x < 0 ? mats.sofa : mats.accent, x, board + row * level + 0.083, 0.01,
           w / 2 - 0.11, 0.16, d - 0.10, 0.016);
+      } else if ((row + Number(x > 0)) % 3 === 1) {
+        for (const [i, color] of [mats.linen, mats.pillow, mats.frame].entries()) {
+          box(node, color, x + (i - 1) * 0.018, board + row * level + 0.028 * (i + 0.5), 0.027,
+            0.26 - 0.019 * i, 0.028, 0.19 - 0.013 * i).rotation.y = (i - 1) * 0.069;
+        }
       } else {
-        for (const [i, color] of [mats.linen, mats.accent, mats.pillow].entries()) {
-          const height = 0.17 + 0.026 * i;
-          box(node, color, x + 0.053 * (i - 1), board + row * level + height / 2, -0.034, 0.046, height, 0.17);
+        const colors = x < 0 ? [mats.frame, mats.accent, mats.linen] : [mats.pillow, mats.linen, mats.oak, mats.accent];
+        let offset = x - w * (row % 2 ? 0.05 : 0.15);
+        for (const [i, color] of colors.entries()) {
+          const height = 0.172 + ((i * 3 + row * 2) % 5) * 0.027;
+          const thick = 0.024 + (i % 3) * 0.011;
+          box(node, color, offset + thick / 2, board + row * level + height / 2, 0.009 + 0.016 * (i % 2),
+            thick, height, 0.13 + 0.025 * (i % 3));
+          offset += thick + 0.006;
         }
       }
     }
@@ -122,8 +147,22 @@ function desk(node, { w, d, deskDepth }) {
   chair(node, 0, d / 2 - 0.29, Math.PI);
 }
 
+function lowCabinet(node, { w, d, h, doors }) {
+  const plinth = 0.062, top = 0.028, panel = 0.021;
+  const doorHeight = h - plinth - top - 0.012;
+  box(node, mats.frame, 0, plinth / 2, -0.027, w - 0.06, plinth, d - 0.075);
+  box(node, mats.oak, 0, (h + plinth - top) / 2, -panel / 2, w - 0.014, h - plinth - top, d - panel);
+  box(node, mats.wood, 0, h - top / 2, 0, w, top, d);
+  for (let i = 0; i < doors; i++) {
+    const width = w / doors;
+    const x = width * (i + 0.5) - w / 2;
+    box(node, mats.wood, x, plinth + doorHeight / 2 + 0.006, (d - panel) / 2, width - 0.009, doorHeight, panel);
+    box(node, mats.frame, x, h - 0.105, d / 2 + 0.005, 0.112, 0.014, 0.012);
+  }
+}
+
 const models = {
-  bed, wardrobe, sofa, dining, shelf, desk, 'play-mat': playMat,
+  bed, wardrobe, sofa, dining, shelf, desk, 'play-mat': playMat, 'low-cabinet': lowCabinet, 'massage-chair': massageChair,
   tea: (node, item) => dining(node, item, true),
   coffee: (node, { w, d }) => {
     table(node, w, d, 0.35, mats.oak);

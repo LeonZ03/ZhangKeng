@@ -160,6 +160,73 @@ def sofa(g, parent, item):
         pillow.rotation_euler.y = .16 * (-1 if index == 0 else 1)
 
 
+def massage_chair(g, parent, item):
+    """Model a compact, upright massage chair, with the foot cradle along local -Y."""
+    shell, leather, inset, trim = 'massage_shell', 'massage_leather', 'massage_inset', 'massage_trim'
+
+    def enclosure(name, sections):
+        # Cross-sections of the molded shell from front to back, in metres.
+        sides = 24
+        vertices = [(x + a, y, (low + high) / 2 + b)
+                    for y, x, width, low, high in sections
+                    for a, b in rounded_outline(width / 2, (high - low) / 2, .50, sides)]
+        faces = [tuple(range(sides))]
+        for start in range(0, len(vertices) - sides, sides):
+            for i in range(sides):
+                j = (i + 1) % sides
+                faces.append((start + i, start + sides + i, start + sides + j, start + j))
+        faces.append(tuple(range(len(vertices) - 1, len(vertices) - sides - 1, -1)))
+        g.mesh(parent, name, vertices, faces, shell, smooth=True)
+
+    g.box(parent, 'Recessed swivel cradle', shell, (0, .067, .089), (.651, .918, .178), .072)
+    enclosure('Contoured one-piece back shell', [
+        (-.45, 0, .415, .158, .368), (-.389, 0, .54, .105, .456),
+        (-.14, 0, .62, .139, .505), (.07, 0, .625, .168, .596),
+        (.20, 0, .59, .193, .873), (.35, 0, .571, .208, 1.032),
+        (.46, 0, .55, .225, item['h'] - .012), (.53, 0, .51, .256, item['h']),
+        (.625, 0, .461, .312, 1.073), (.704, 0, .352, .409, .962),
+        (.752, 0, .16, .568, .749),
+    ])
+    g.box(parent, 'Bolstered leather seat', leather, (0, -.091, .451), (.509, .565, .127), .058)
+    for label, y, z, w, h, thickness in [
+        ('Lumbar upholstery', .152, .68, .437, .41, .145),
+        ('Shoulder upholstery', .287, .856, .465, .302, .154),
+        ('Neck pillow', .381, .997, .315, .174, .111),
+    ]:
+        pad = g.box(parent, label, leather, (0, y, z), (w, thickness, h), .052)
+        pad.rotation_euler.x = -.48
+
+    for side in (-1, 1):
+        enclosure('Wrapped arm enclosure', [
+            (-.43, side * .319, .071, .361, .548), (-.375, side * .31, .13, .303, .61),
+            (-.155, side * .3, .15, .282, .644), (.114, side * .296, .158, .276, .676),
+            (.327, side * .271, .156, .341, .739), (.427, side * .254, .12, .432, .715),
+        ])
+        arm = g.box(parent, 'Leather arm sleeve', inset, (side * .287, -.090, .605), (.126, .526, .081), .034)
+        arm.rotation_euler.x = .105
+        bolster = g.box(parent, 'Shoulder air cushion', inset, (side * .219, .245, .87), (.135, .167, .283), .055)
+        bolster.rotation_euler.x = -.41
+        g.tube(parent, 'Side shell accent', trim,
+               [(side * .372, -.291, .481), (side * .374, -.143, .48), (side * .374, .04, .514)],
+               .003, sides=6)
+
+    calf = g.group(parent, 'Padded calf cradle', (0, -.554, .266))
+    calf.rotation_euler.x = -.38
+    g.box(calf, 'Calf cradle housing', shell, (0, .032, 0), (.596, .158, .419), .066)
+    g.box(calf, 'Recessed calf wall', leather, (0, -.050, .014), (.53, .072, .379), .031)
+    for x, width in [(-.262, .081), (0, .067), (.262, .081)]:
+        g.box(calf, 'Calf air cushion', inset, (x, -.099, .013), (width, .105, .345), .036)
+    g.box(parent, 'Rounded foot cradle', shell, (0, -.65, .108), (.594, .203, .184), .053)
+    for x in (-.146, .146):
+        g.box(parent, 'Recessed footbed', leather, (x, -.660, .201), (.234, .159, .035), .014)
+        for y in (-.708, -.682, -.656):
+            g.box(parent, 'Soft footbed ridge', inset, (x, y, .219), (.157, .008, .007), .003)
+
+    g.box(parent, 'Arm controller bezel', trim, (.297, -.229, .66), (.078, .106, .021), .008)
+    g.box(parent, 'Arm controller touch surface', shell, (.297, -.234, .672), (.065, .081, .008), .004)
+    g.box(parent, 'Standby indicator', trim, (.297, -.209, .677), (.019, .004, .003), .001)
+
+
 def soft_pillow(g, parent, x, y, z, color):
     """Low resolution sewn pillow with domed faces, pinched corners and welt."""
     steps, width, height, thickness = 10, .32, .315, .139
@@ -316,6 +383,62 @@ def play_mat(g, parent, item):
     g.box(parent, 'Long play block', 'oak', (.15, .26, .071), (.20, .083, .064), .009, rotation=-.2)
 
 
+def bound_book(g, parent, at, size, binding, tilt=0, yaw=0, stamped=False):
+    w, d, h = size
+    book = g.group(parent, 'Bound volume', at, yaw)
+    book.rotation_euler.y = tilt
+    g.box(book, 'Paper block', 'book_pages', (0, .003, 0), (w - .004, d - .011, h - .006), 0)
+    for x in (-(w - .002) / 2, (w - .002) / 2):
+        g.box(book, 'Book cover', binding, (x, .002, 0), (.002, d - .004, h), 0)
+    g.box(book, 'Book spine', binding, (0, -(d - .003) / 2, 0), (w - .002, .005, h), 0)
+    if stamped:
+        for z in (h * .27, -h * .34):
+            g.box(book, 'Small spine foil rule', 'bronze', (0, -d / 2 - .0015, z),
+                  (w * .64, .0015, .0024), 0)
+
+
+def bookcase_contents(g, parent, w, board, step):
+    # The compartments use different groupings, distances from the shelf edge,
+    # colors, and book sizes. Each tuple gives spine width, height, depth and binding.
+    atlas = (.054, .318, .214, 'book_navy')
+    linen = (.034, .251, .174, 'book_cream')
+    journal = (.026, .212, .144, 'book_red')
+    design = (.046, .291, .188, 'book_gray')
+    fiction = (.032, .225, .151, 'book_green')
+    essay = (.029, .196, .135, 'book_brown')
+
+    def standing(row, bay, pos, books, last_tilt=0):
+        base = board + row * step
+        cursor = bay * w / 4 + pos
+        for index, (thickness, height, depth, binding) in enumerate(books):
+            tilt = last_tilt if index == len(books) - 1 else 0
+            half = (thickness * cos(tilt) + height * abs(sin(tilt))) / 2
+            z = base + (height * cos(tilt) + thickness * abs(sin(tilt))) / 2
+            setback = ((index * 7 + row * 11) % 5) * .011
+            bound_book(g, parent, (cursor + half, -.045 + setback, z),
+                       (thickness, depth, height), binding, tilt, stamped=index % 2 == 0)
+            cursor += 2 * half + .004 + .003 * (index % 3)
+
+    def stacked(row, bay, pos, books):
+        z = board + row * step
+        for index, (thickness, width, depth, binding) in enumerate(books):
+            x = bay * w / 4 + pos + (.012 if index % 2 else -.006)
+            yaw = .065 * (index % 3 - 1)
+            bound_book(g, parent, (x, -.032 + index * .008, z + thickness / 2),
+                       (thickness, depth, width), binding, pi / 2, yaw, stamped=index != 1)
+            z += thickness + .001
+
+    standing(0, -1, -.226, [atlas, design, linen, essay, fiction, journal], .13)
+    stacked(0, 1, -.095, [atlas, design, fiction, essay])
+    standing(0, 1, .125, [linen, fiction])
+    stacked(1, -1, -.092, [design, linen, journal])
+    standing(1, -1, .124, [atlas, design], .10)
+    standing(1, 1, -.165, [journal, linen, fiction, design, atlas], -.14)
+    standing(2, -1, -.07, [essay, journal, fiction], .20)
+    standing(2, 1, -.235, [design, linen, fiction, essay])
+    stacked(2, 1, .119, [linen, journal])
+
+
 def shelf(g, parent, item):
     w, d, h = item['w'], item['d'], item['h']
     levels, board = item['shelves'], .024
@@ -330,18 +453,15 @@ def shelf(g, parent, item):
         base = board + step * row
         g.box(parent, 'Shelf divider', 'oak', (0, -board / 2, base + (step - board) / 2),
               (board, d - board, step - board), .004)
-        for x in (-w / 4, w / 4):
-            if item.get('bins'):
+        if item.get('bins'):
+            for x in (-w / 4, w / 4):
                 tone = 'sofa' if x < 0 else 'sage'
                 g.box(parent, 'Woven toy bin', tone, (x, -.01, base + .083),
                       (w / 2 - .11, d - .10, .16), .016)
                 g.box(parent, 'Canvas bin pull', 'linen', (x, -.013 - (d - .10) / 2, base + .105),
                       (.085, .015, .023), .004)
-            else:
-                for i, (height, tone) in enumerate(((.176, 'linen'), (.231, 'sage'), (.205, 'umber'), (.255, 'walnut'))):
-                    book_x = x + (i - 1.5) * .048
-                    g.box(parent, 'Cloth-bound book', tone, (book_x, .031, base + height / 2),
-                          (.041, .174, height), 0)
+    if not item.get('bins'):
+        bookcase_contents(g, parent, w, board, step)
 
 
 def desk(g, parent, item):
@@ -361,6 +481,24 @@ def desk(g, parent, item):
     g.box(parent, 'Desk notebook', 'sage', (.47, center_y - .045, .761), (.206, .254, .022), .005, rotation=.10)
     g.box(parent, 'Notebook paper edge', 'linen', (.469, center_y - .047, .762), (.192, .248, .015), .002, rotation=.10)
     chair(g, parent, 0, .29 - d / 2, pi)
+
+
+def low_cabinet(g, parent, item):
+    w, d, h = item['w'], item['d'], item['h']
+    plinth, top, panel = .062, .028, .021
+    door_height = h - plinth - top - .012
+    g.box(parent, 'Recessed plinth', 'graphite', (0, .027, plinth / 2),
+          (w - .06, d - .075, plinth), .004)
+    g.box(parent, 'Oak cabinet case', 'oak', (0, panel / 2, (h + plinth - top) / 2),
+          (w - .014, d - panel, h - plinth - top), .006)
+    g.box(parent, 'Oak cabinet top', 'oak', (0, 0, h - top / 2), (w, d, top), .006, grain='x')
+    width = w / item['doors']
+    for index in range(item['doors']):
+        x = width * (index + .5) - w / 2
+        g.box(parent, 'Oak cabinet door', 'oak', (x, (panel - d) / 2, plinth + door_height / 2 + .006),
+              (width - .009, panel, door_height), .003)
+        g.box(parent, 'Graphite cabinet pull', 'graphite', (x, -d / 2 - .005, h - .105),
+              (.112, .012, .014), .003)
 
 
 def floor_finishes(g):
@@ -407,7 +545,8 @@ def refine(ctx):
     g = Geometry(ctx)
     library = bed_library()
     models = {'wardrobe': wardrobe, 'sofa': sofa, 'coffee': coffee, 'dining': dining,
-              'play-mat': play_mat, 'shelf': shelf, 'desk': desk}
+              'play-mat': play_mat, 'shelf': shelf, 'desk': desk, 'low-cabinet': low_cabinet,
+              'massage-chair': massage_chair}
     for item in ctx.plan['furnishings']:
         node = ctx.nodes[item['id']]
         clear_contents(node)

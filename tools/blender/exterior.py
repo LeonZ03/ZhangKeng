@@ -319,15 +319,16 @@ def refine(ctx):
     bpy.context.view_layer.update()
     surfaces = Surfaces(ctx.workspace)
     textures = {
-        "plaster": surfaces.textured("Cream aggregate stucco", (222, 215, 201), "stucco", 0.89, 0.60),
-        "trim": surfaces.textured("Pale molded facade bands", (231, 224, 210), "stucco", 0.86, 0.29),
-        "footer": surfaces.textured("Slate-colored cement plinth", (108, 112, 107), "stone", 0.9, 0.42),
-        "stone": surfaces.textured("Honed pale limestone", (185, 174, 152), "stone", 0.78, 0.42),
-        "soffit": surfaces.textured("Honey fir exterior joinery", (167, 110, 61), "wood", 0.56, 0.37),
+        "plaster": surfaces.textured("Warm gray aggregate stucco", (197, 188, 177), "stucco", 0.89, 0.48),
+        "trim": surfaces.textured("Pale molded facade bands", (217, 207, 194), "stucco", 0.86, 0.22),
+        "footer": surfaces.textured("Slate-gray cement plinth", (91, 96, 101), "slate", 0.88, 0.29),
+        "pavers": surfaces.textured("Slate-gray exterior paving", (109, 113, 117), "slate", 0.8, 0.24),
+        "stone": surfaces.textured("Honed pale limestone", (183, 177, 166), "stone", 0.78, 0.35),
+        "soffit": surfaces.textured("Natural fir eaves and rafters", (146, 108, 81), "fir", 0.61, 0.29),
         "oakDoor": surfaces.textured("Dark stained oak entrance doors", (72, 43, 26), "wood", 0.48, 0.32),
-        "treads": surfaces.textured("Light oiled timber stair nosing", (196, 142, 79), "wood", 0.57, 0.36),
+        "treads": surfaces.textured("Knotty fir stair treads and stringers", (173, 132, 95), "fir", 0.62, 0.29),
         "deck": surfaces.textured("Warm composite decking", (133, 103, 75), "wood", 0.72, 0.35),
-        "ceramic": surfaces.textured("Charcoal glazed ceramic roof tile", (49, 52, 58), "slate", 0.37, 0.30),
+        "ceramic": surfaces.textured("Charcoal glazed ceramic roof tile", (43, 47, 54), "slate", 0.40, 0.26),
         "lawn": surfaces.textured("Courtyard lawn and moss", (112, 129, 65), "lawn", 0.95, 0.47),
         "earth": surfaces.textured("Construction stage silty soil", (132, 111, 81), "earth", 0.96, 0.47),
         "gravel": surfaces.textured("Dark mixed pea gravel", (94, 93, 83), "gravel", 0.93, 0.43),
@@ -338,9 +339,10 @@ def refine(ctx):
         "bark": surfaces.textured("Mature courtyard tree bark", (91, 72, 52), "wood", 0.92, 0.56),
     }
     ceramic, soffit, stone = [textures[key] for key in ("ceramic", "soffit", "stone")]
-    frame = solid("Warm graphite window frames", (83, 85, 77), 0.43, 0.44)
-    seal = solid("Weather seals for insulating glass", (55, 59, 54), 0.64)
-    glass = solid("Clear slightly blue-green exterior glazing", (139, 168, 171), 0.13, 0.07, 0.36, True)
+    frame = solid("Anthracite aluminum window frames", (42, 46, 51), 0.53, 0.26)
+    seal = solid("Weather seals for insulating glass", (33, 36, 40), 0.64)
+    glass = solid("Neutral gray-blue exterior glazing", (151, 166, 173), 0.16, 0.07, 0.36, True)
+    stair_steel = solid("Black powder-coated stair steel", (24, 26, 30), 0.53, 0.18)
     fittings = solid("Graphite hardware and handrails", (61, 64, 60), 0.36, 0.57)
     stainless = solid("Brushed outdoor sink steel", (155, 159, 150), 0.39, 0.61)
 
@@ -373,14 +375,22 @@ def refine(ctx):
             continue
         source = obj.get("source_material")
         if source in {"wood", "timber", "oak"}:
-            apply_surface(obj, textures["treads" if source != "oak" else "soffit"],
-                          (2.6, 0.92), long_axis(obj))
+            apply_surface(obj, textures["treads"], (2.6, 0.92), long_axis(obj))
+        elif source == "stairRail":
+            replace_surface(obj, stair_steel)
+        elif source == "slatePaving":
+            apply_surface(obj, textures["pavers"], (0.9, 0.9))
         elif source == "cement":
             apply_surface(obj, stone, (0.9, 0.9))
     for floor in (ground, upper):
         for obj in floor.children:
-            if obj.type == "MESH" and obj.get("source_material") in {"cement", "trim", "stone"}:
-                center, dimensions = center_and_spans(obj)
+            if obj.type != "MESH":
+                continue
+            source = obj.get("source_material")
+            if source == "slatePaving":
+                apply_surface(obj, textures["pavers"], (0.9, 0.9))
+            elif source in {"cement", "trim", "stone"}:
+                center, _ = center_and_spans(obj)
                 if center.y < -7.8 or center.y > 0:
                     apply_surface(obj, stone, (0.9, 0.9))
 
@@ -393,6 +403,7 @@ def refine(ctx):
     ground_materials = {
         "lawn": ("lawn", (1.35, 1.35)), "darkStone": ("gravel", (0.67, 0.67)),
         "paving": ("stone", (0.86, 0.86)), "stone": ("stone", (0.86, 0.86)),
+        "slatePaving": ("pavers", (0.86, 0.86)),
         "sill": ("stone", (0.86, 0.86)), "rock": ("ashlar", (1.23, 0.52)),
         "soil": ("earth", (0.86, 0.86)), "plaster": ("plaster", (0.82, 0.82)),
         "brick": ("brick", (1.17, 0.58)), "cement": ("footer", (0.86, 0.86)),

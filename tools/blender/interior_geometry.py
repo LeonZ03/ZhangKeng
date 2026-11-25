@@ -88,6 +88,7 @@ def maps(artifacts):
         ('linen', 'Ivory washed linen', (230, 223, 209), .82, weave * .82),
         ('sage', 'Olive plain weave', (145, 150, 117), .88, weave),
         ('umber', 'Caramel cotton weave', (169, 125, 89), .83, weave),
+        ('massage_leather', 'Black grained upholstery', (32, 31, 30), .54, cloud * .5),
     ]
     with TemporaryDirectory(prefix='finish-maps-', dir=artifacts) as temporary:
         for key, name, color, rough, pattern in finishes:
@@ -105,6 +106,16 @@ def maps(artifacts):
         ('green', 'Rubber plant · deep green', (68, 92, 52), .51, 0),
         ('newleaf', 'Rubber plant · new growth', (108, 128, 67), .57, 0),
         ('soil', 'Dry potting soil', (96, 77, 58), .94, 0),
+        ('massage_shell', 'Satin black molded shell', (31, 33, 36), .40, .16),
+        ('massage_trim', 'Anodized smoke trim', (82, 86, 91), .38, .61),
+        ('massage_inset', 'Charcoal padded inserts', (51, 49, 47), .63, 0),
+        ('book_pages', 'Ivory book paper', (213, 199, 173), .91, 0),
+        ('book_navy', 'Indigo cloth binding', (55, 70, 91), .86, 0),
+        ('book_green', 'Eucalyptus cloth binding', (84, 103, 83), .84, 0),
+        ('book_red', 'Oxblood binding', (120, 64, 58), .77, 0),
+        ('book_gray', 'Slate dust jacket', (108, 117, 121), .75, 0),
+        ('book_cream', 'Oat paper cover', (196, 181, 150), .88, 0),
+        ('book_brown', 'Umber leather binding', (100, 74, 51), .72, 0),
     ]:
         result[key] = material(name, color, rough, metal)
     return result
@@ -159,21 +170,23 @@ class Geometry:
         bm.to_mesh(mesh)
         bm.free()
         mesh.update()
-        mesh.materials.append(self.m[mat])
-        layer = mesh.uv_layers.new()
-        grain_axis = 'xyz'.index(grain)
-        woven = mat in {'sofa', 'linen', 'sage', 'umber'}
-        wood = mat in {'oak', 'walnut', 'floorwood'}
-        scale = (8, 8) if woven else (2.8, .72) if wood else (1.8, 1.8)
-        shift = (.5 + .245 * at[0] + .461 * at[1] + .307 * at[2], .5) if wood else (.5, .5)
-        for poly in mesh.polygons:
-            normal_axis = max(range(3), key=lambda k: abs(poly.normal[k]))
-            axes = sorted({0, 1, 2} - {normal_axis})
-            if wood and grain_axis in axes:
-                axes = [next(k for k in axes if k != grain_axis), grain_axis]
-            for loop_index in poly.loop_indices:
-                co = mesh.vertices[mesh.loops[loop_index].vertex_index].co
-                layer.data[loop_index].uv = tuple(co[k] * s + offset for k, s, offset in zip(axes, scale, shift))
+        finish = self.m[mat]
+        mesh.materials.append(finish)
+        if any(node.type == 'TEX_IMAGE' for node in finish.node_tree.nodes):
+            layer = mesh.uv_layers.new()
+            grain_axis = 'xyz'.index(grain)
+            woven = mat in {'sofa', 'linen', 'sage', 'umber', 'massage_leather'}
+            wood = mat in {'oak', 'walnut', 'floorwood'}
+            scale = (8, 8) if woven else (2.8, .72) if wood else (1.8, 1.8)
+            shift = (.5 + .245 * at[0] + .461 * at[1] + .307 * at[2], .5) if wood else (.5, .5)
+            for poly in mesh.polygons:
+                normal_axis = max(range(3), key=lambda k: abs(poly.normal[k]))
+                axes = sorted({0, 1, 2} - {normal_axis})
+                if wood and grain_axis in axes:
+                    axes = [next(k for k in axes if k != grain_axis), grain_axis]
+                for loop_index in poly.loop_indices:
+                    co = mesh.vertices[mesh.loops[loop_index].vertex_index].co
+                    layer.data[loop_index].uv = tuple(co[k] * s + offset for k, s, offset in zip(axes, scale, shift))
         if radius > 0:
             # A rounded box has flat field normals and round edges. Use the
             # analytic fillet normal at each corner of each polygon.
