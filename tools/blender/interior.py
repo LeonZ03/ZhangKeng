@@ -1,6 +1,6 @@
 """Resolve the villa's plan furniture into editable, glTF-compatible assemblies."""
 
-from math import cos, pi, sin, tau
+from math import cos, pi, radians, sin, tau
 from pathlib import Path
 from random import Random
 
@@ -27,7 +27,7 @@ def bed_library():
 
 def bed(g, parent, item, library):
     w, d = item['w'], item['d']
-    accent = {'bed-nw': 'sage', 'bed-sw': 'umber', 'bed-se': 'linen', 'bed-up': 'sage', 'study-bed': 'linen'}[item['id']]
+    duvet_finish = {'bed-nw': 'sofa', 'bed-sw': 'umber', 'bed-up': 'taupe'}.get(item['id'], 'linen')
     # The source bed runs along X with its head at negative X. The villa's bed
     # anchors expect the head at positive Y. Keep the adaptation below the anchor.
     across, along = w / 1.585, d / 2.508
@@ -47,7 +47,7 @@ def bed(g, parent, item, library):
         elif original.startswith(('BedLong', 'BedCross', 'BedRound', 'BedFoot')):
             material = 'graphite'
         elif original == 'FloralDuvet':
-            material = accent
+            material = duvet_finish
             duvet = mesh
         if original.startswith(('CottonPillow', 'PillowPipedSeam')):
             min_x = min(v.co.x for v in mesh.vertices)
@@ -74,7 +74,7 @@ def bed(g, parent, item, library):
             obj['source_object'] = source['source_object']
     # A tailored textile at the foot gives the beds the strip drawn in the plans.
     if item['id'] in {'bed-sw', 'bed-se', 'bed-up'}:
-        runner(g, parent, duvet, w, d, 'sage' if accent == 'umber' else 'umber')
+        runner(g, parent, duvet, w, d, 'sage' if item['id'] == 'bed-sw' else 'umber')
 
 
 def runner(g, parent, duvet, w, d, color):
@@ -368,19 +368,71 @@ def coffee(g, parent, item):
     g.plate(parent, 'Low stoneware bowl', 'ceramic', (-.025, -.219, .366), .105, .035)
 
 
+def toy_car(g, parent, toy, base):
+    car = g.group(parent, 'Toy pickup' if toy.get('pickup') else 'Toy compact car',
+                  (toy['x'], -toy['z'], base), radians(toy['angle']))
+    length, finish = toy['length'], toy['finish']
+    pickup = toy.get('pickup', False)
+    w = .093 if pickup else .104
+    cab = length * (-.12 if pickup else .06)
+    cab_length = length * (.38 if pickup else .48)
+    g.box(car, 'Painted toy chassis', finish, (0, 0, .052), (w, length, .047), .015)
+    g.box(car, 'Rounded toy cabin', finish, (0, cab, .098), (w * .83, cab_length, .052), .014)
+    g.box(car, 'Inset windscreen', 'graphite', (0, cab - cab_length / 2, .104),
+          (w * .61, .007, .021), .003)
+    if pickup:
+        g.box(car, 'Wooden pickup bed', 'oak', (0, length * .26, .081), (w * .67, length * .31, .012), .004, grain='y')
+    else:
+        g.box(car, 'Inset rear window', 'graphite', (0, cab + cab_length / 2, .103),
+              (w * .53, .006, .017), .002)
+    tire = [(0, -.009), (.019, -.009), (.024, -.005), (.024, .005), (.019, .009), (0, .009)]
+    hub = [(0, -.003), (.009, -.003), (.009, .002), (.007, .003), (0, .003)]
+    for side in (-1, 1):
+        g.box(car, 'Inset side window', 'graphite', (side * w * .415, cab + .004, .104),
+              (.006, cab_length * .63, .020), .003)
+        g.box(car, 'Toy headlamp', 'ceramic', (side * w * .30, -length / 2 + .002, .054),
+              (.017, .007, .011), .003)
+        for axle in (-.31, .31):
+            x, y = side * w * .49, length * axle
+            wheel = g.lathe(car, 'Black toy tire', 'graphite', (x, y, .024), tire, segments=16)
+            wheel.rotation_euler.y = pi / 2
+            cap = g.lathe(car, 'Wood hubcap', 'oak', (x + side * .01, y, .024), hub, segments=16)
+            cap.rotation_euler.y = side * pi / 2
+
+
 def play_mat(g, parent, item):
-    w, d = item['w'], item['d']
+    w, d = item['w'] - .10, item['d'] - .22
+    top = .039
     g.box(parent, 'Bound fabric mat base', 'linen', (0, 0, .012), (w, d, .024), .008)
-    palette = ('sage', 'linen', 'sofa')
+    palette = ('dustyBlue', 'linen', 'sofa')
     for row in range(2):
         for column in range(3):
             g.box(parent, 'Padded mat section', palette[(row + column) % len(palette)],
                   ((column - 1) * w / 3, (row - .5) * d / 2, .029),
                   (w / 3 - .008, d / 2 - .008, .020), .007)
-    g.box(parent, 'Floor cushion', 'umber', (-.57, .41, .099), (.40, .35, .12), .049, rotation=.12)
-    for x, y, finish, angle in [(.39, .25, 'oak', -.14), (.58, .21, 'umber', .19), (.43, -.03, 'sage', .32)]:
-        g.box(parent, 'Rounded play block', finish, (x, y, .099), (.14, .14, .12), .012, rotation=angle)
-    g.box(parent, 'Long play block', 'oak', (.15, .26, .071), (.20, .083, .064), .009, rotation=-.2)
+    g.box(parent, 'Floor cushion', 'umber', (-.58, .31, top + .051), (.33, .29, .102), .046, rotation=.17)
+    for toy in item['toys']['cars']:
+        toy_car(g, parent, toy, top)
+    for block in item['toys']['blocks']:
+        width, depth, height = block['size']
+        finish, angle = block['finish'], radians(block['angle'])
+        base = (0 if block.get('floor') else top) + block.get('rise', 0)
+        at = (block['x'], -block['z'], base)
+        if block.get('shape') == 'roof':
+            peak = g.group(parent, 'Roof block', at, angle)
+            vertices = [(x, y, z) for y in (-depth / 2, depth / 2)
+                        for x, z in ((-width / 2, 0), (width / 2, 0), (0, height))]
+            g.mesh(peak, 'Painted triangular block', vertices,
+                   [(0, 1, 2), (5, 4, 3), (0, 3, 4, 1), (1, 4, 5, 2), (2, 5, 3, 0)], finish)
+        elif block.get('shape') == 'round':
+            radius = width / 2
+            g.lathe(parent, 'Round play block', finish, at, [
+                (0, 0), (radius - .003, 0), (radius, .003),
+                (radius, height - .003), (radius - .003, height), (0, height),
+            ], segments=18)
+        else:
+            g.box(parent, 'Wood play block', finish, (at[0], at[1], base + height / 2),
+                  (width, depth, height), .004, rotation=angle)
 
 
 def bound_book(g, parent, at, size, binding, tilt=0, yaw=0, stamped=False):
@@ -455,7 +507,7 @@ def shelf(g, parent, item):
               (board, d - board, step - board), .004)
         if item.get('bins'):
             for x in (-w / 4, w / 4):
-                tone = 'sofa' if x < 0 else 'sage'
+                tone = 'sofa' if x < 0 else 'dustyBlue'
                 g.box(parent, 'Woven toy bin', tone, (x, -.01, base + .083),
                       (w / 2 - .11, d - .10, .16), .016)
                 g.box(parent, 'Canvas bin pull', 'linen', (x, -.013 - (d - .10) / 2, base + .105),

@@ -1,12 +1,15 @@
+import * as THREE from 'three';
 import { baths, furnishings } from './plan.js';
-import { box, cushion, group, mats, plant, post, round } from './geometry.js';
+import { addMesh, box, cushion, group, mats, outline, plant, post, round } from './geometry.js';
 
-function bed(node, { w, d }) {
+function bed(node, { id, w, d }) {
   box(node, mats.oak, 0, 0.17, 0, w, 0.26, d);
   cushion(node, mats.linen, 0, 0.37, 0.024, w - 0.06, 0.19, d - 0.09);
   cushion(node, mats.wood, 0, 0.53, -d / 2 + 0.044, w, 0.61, 0.09);
-  cushion(node, mats.cloth, 0, 0.49, 0.18, w - 0.04, 0.105, d - 0.42);
-  cushion(node, mats.accent, 0, 0.55, d * 0.29, w - 0.02, 0.063, d * 0.35);
+  const duvet = { 'bed-nw': mats.sofa, 'bed-sw': mats.pillow, 'bed-up': mats.taupe }[id] ?? mats.cloth;
+  cushion(node, duvet, 0, 0.49, 0.18, w - 0.04, 0.105, d - 0.42);
+  const runner = { 'bed-sw': mats.accent, 'bed-se': mats.pillow, 'bed-up': mats.pillow }[id];
+  if (runner) cushion(node, runner, 0, 0.55, d * 0.29, w - 0.02, 0.063, d * 0.26);
   for (const x of w < 1.35 ? [0] : [-w / 4, w / 4]) {
     cushion(node, mats.ceramic, x, 0.51, -d / 2 + 0.31, w * 0.4, 0.145, 0.39, 0.07).rotation.y = Math.sign(x) * 0.035;
   }
@@ -90,18 +93,50 @@ function dining(node, item, tea = false) {
   }
 }
 
-function playMat(node, { w, d }) {
-  cushion(node, mats.linen, 0, 0.012, 0, w, 0.024, d, 0.008);
-  const colors = [mats.accent, mats.linen, mats.sofa];
-  for (let row = 0; row < 2; row++) {
-    for (let col = 0; col < 3; col++) {
-      cushion(node, colors[(row + col) % colors.length], (col - 1) * w / 3, 0.029, (row - 0.5) * d / 2,
-        w / 3 - 0.008, 0.02, d / 2 - 0.008, 0.007);
+function toyCar(parent, { x, z, length, angle, finish, pickup }, base) {
+  const car = group(parent, '玩具小汽车', x, base, z);
+  car.rotation.y = THREE.MathUtils.degToRad(angle);
+  const w = pickup ? 0.093 : 0.104;
+  const cab = pickup ? length * 0.12 : -length * 0.06;
+  const cabLength = length * (pickup ? 0.38 : 0.48);
+  cushion(car, mats[finish], 0, 0.052, 0, w, 0.047, length, 0.015);
+  cushion(car, mats[finish], 0, 0.098, cab, w * 0.83, 0.052, cabLength, 0.014);
+  cushion(car, mats.frame, 0, 0.104, cab + cabLength / 2, w * 0.61, 0.021, 0.007, 0.003);
+  if (pickup) cushion(car, mats.wood, 0, 0.081, -length * 0.26, w * 0.67, 0.012, length * 0.31, 0.004);
+  for (const side of [-1, 1]) {
+    cushion(car, mats.frame, side * w * 0.415, 0.104, cab - 0.004, 0.006, 0.02, cabLength * 0.63, 0.003);
+    for (const axle of [-0.31, 0.31]) {
+      post(car, mats.frame, side * w * 0.49, 0.024, length * axle, 0.024, 0.018).rotation.z = Math.PI / 2;
+      post(car, mats.wood, side * (w * 0.49 + 0.01), 0.024, length * axle, 0.009, 0.006).rotation.z = Math.PI / 2;
     }
   }
-  cushion(node, mats.pillow, -0.57, 0.099, -0.41, 0.4, 0.12, 0.35, 0.05);
-  for (const [x, z, color] of [[0.39, -0.25, mats.wood], [0.58, -0.21, mats.pillow], [0.43, 0.03, mats.accent]]) {
-    cushion(node, color, x, 0.097, z, 0.14, 0.12, 0.14, 0.009);
+}
+
+function playMat(node, { w, d, toys }) {
+  const matW = w - 0.10, matD = d - 0.22;
+  const top = 0.039;
+  cushion(node, mats.linen, 0, 0.012, 0, matW, 0.024, matD, 0.008);
+  const colors = [mats.dustyBlue, mats.linen, mats.sofa];
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 3; col++) {
+      cushion(node, colors[(row + col) % colors.length], (col - 1) * matW / 3, 0.029, (row - 0.5) * matD / 2,
+        matW / 3 - 0.008, 0.02, matD / 2 - 0.008, 0.007);
+    }
+  }
+  cushion(node, mats.pillow, -0.58, top + 0.051, -0.31, 0.33, 0.102, 0.29, 0.046).rotation.y = 0.17;
+  for (const car of toys.cars) toyCar(node, car, top);
+  for (const { x, z, size: [w, d, h], finish, angle, shape, floor, rise = 0 } of toys.blocks) {
+    const block = group(node, '积木', x, (floor ? 0 : top) + rise, z);
+    block.rotation.y = THREE.MathUtils.degToRad(angle);
+    const material = mats[finish];
+    if (shape === 'roof') {
+      const profile = outline([[-w / 2, 0], [w / 2, 0], [0, h]]);
+      addMesh(block, new THREE.ExtrudeGeometry(profile, { depth: d, bevelEnabled: false }), material).position.z = -d / 2;
+    } else if (shape === 'round') {
+      post(block, material, 0, h / 2, 0, w / 2, h);
+    } else {
+      cushion(block, material, 0, h / 2, 0, w, h, d, 0.004);
+    }
   }
 }
 
@@ -117,7 +152,7 @@ function shelf(node, { w, d, h, shelves, bins }) {
     if (row === shelves) break;
     for (const x of [-w / 4, w / 4]) {
       if (bins) {
-        cushion(node, x < 0 ? mats.sofa : mats.accent, x, board + row * level + 0.083, 0.01,
+        cushion(node, x < 0 ? mats.sofa : mats.dustyBlue, x, board + row * level + 0.083, 0.01,
           w / 2 - 0.11, 0.16, d - 0.10, 0.016);
       } else if ((row + Number(x > 0)) % 3 === 1) {
         for (const [i, color] of [mats.linen, mats.pillow, mats.frame].entries()) {

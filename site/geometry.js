@@ -16,6 +16,8 @@ export const mats = {
   tile: standard('#ddd1bc'), stone: standard('#bdb8a8'), bath: standard('#aeb9b4'),
   cloth: standard('#eee4d2'), linen: standard('#e6dcc8'), accent: standard('#93997d'),
   sofa: standard('#d5c5ab'), pillow: standard('#b48b65'), ceramic: standard('#f3eee0', 0.32),
+  dustyBlue: standard('#a0afbf'), taupe: standard('#beb4aa'),
+  toyClay: standard('#ae604b', 0.5), toyOchre: standard('#c99449', 0.5), toyBlue: standard('#507498', 0.5),
   steel: new THREE.MeshStandardMaterial({ color: '#5e635d', roughness: 0.38, metalness: 0.64 }),
   stairRail: standard('#202225', 0.51),
   plant: standard('#59684b'), soil: standard('#a38c68'), mulch: standard('#706654'),

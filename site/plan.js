@@ -80,13 +80,33 @@ export const floors = {
   },
 };
 
+// Toys use local coordinates relative to the play mat. A few blocks rest on the tile beside it.
+const playToys = {
+  cars: [
+    { x: -0.41, z: 0.19, length: 0.22, angle: -33, finish: 'toyClay' },
+    { x: 0.58, z: -0.28, length: 0.18, angle: 62, finish: 'toyBlue', pickup: true },
+  ],
+  blocks: [
+    { x: 0.10, z: -0.30, size: [0.145, 0.09, 0.038], angle: -18, finish: 'oak' },
+    { x: 0.085, z: -0.30, size: [0.067, 0.065, 0.057], angle: -8, finish: 'toyOchre', rise: 0.038 },
+    { x: 0.23, z: 0.025, size: [0.125, 0.06, 0.044], angle: 25, finish: 'oak' },
+    { x: 0.37, z: 0.19, size: [0.067, 0.066, 0.055], angle: -15, finish: 'toyClay' },
+    { x: -0.065, z: 0.25, size: [0.101, 0.075, 0.061], angle: 114, finish: 'toyBlue', shape: 'roof' },
+    { x: 0.04, z: 0.40, size: [0.071, 0.071, 0.045], angle: 0, finish: 'toyOchre', shape: 'round' },
+    { x: 0.53, z: 0.42, size: [0.113, 0.06, 0.046], angle: -21, finish: 'oak' },
+    { x: -0.66, z: 0.40, size: [0.067, 0.06, 0.043], angle: 36, finish: 'toyClay' },
+    { x: -0.22, z: 0.686, size: [0.065, 0.054, 0.039], angle: 20, finish: 'toyBlue', floor: true },
+    { x: 0.66, z: 0.693, size: [0.057, 0.057, 0.043], angle: 0, finish: 'toyOchre', shape: 'round', floor: true },
+  ],
+};
+
 // Footprints of drawn furniture were scaled from the 1:50 sheets where dimensions are absent.
 // x and z are centres before rotation. Footprints include seating where supplied as a set.
 export const furnishings = [
   { id: 'bed-nw', floor: 'ground', room: '西北卧室', name: '双人床', type: 'bed', x: 1.12, z: 1.44, w: 1.52, d: 2, angle: 90 },
   { id: 'bed-sw', floor: 'ground', room: '西南卧室', name: '双人床', type: 'bed', x: 1.14, z: 7.5, w: 1.8, d: 2.04, angle: 90 },
   { id: 'bed-se', floor: 'ground', room: '东南卧室', name: '双人床', type: 'bed', x: 10.68, z: 7.5, w: 1.8, d: 2.04, angle: -90 },
-  { id: 'wardrobe-nw', floor: 'ground', room: '西北卧室', name: '衣柜', type: 'wardrobe', x: 1.15, z: 3.22, w: 2.1, d: 0.56, angle: 180 },
+  { id: 'wardrobe-nw', floor: 'ground', room: '西北卧室', name: '衣柜', type: 'wardrobe', x: 1.15, z: 3.22, w: 2.1, d: 0.56, angle: 180, orientationVersion: 1 },
   { id: 'wardrobe-sw', floor: 'ground', room: '西南卧室', name: '衣柜', type: 'wardrobe', x: 1.15, z: 5.53, w: 2.1, d: 0.53, angle: 0 },
   { id: 'wardrobe-se', floor: 'ground', room: '东南卧室', name: '衣柜', type: 'wardrobe', x: 10.65, z: 5.53, w: 2.1, d: 0.53, angle: 0 },
   { id: 'dining', floor: 'ground', room: '餐厅', name: '八人餐桌组', type: 'dining', x: 5.24, z: 1.75, w: 1.85, d: 2.8, angle: 0, tabletop: [1, 2] },
@@ -97,7 +117,7 @@ export const furnishings = [
   { id: 'tea', floor: 'upper', room: '茶室', name: '茶桌与五把座椅', type: 'tea', x: 6.76, z: 5.63, w: 2.43, d: 3.64, angle: 0, tabletop: [1.1, 2.92] },
   { id: 'bed-up', floor: 'upper', room: '卧室', name: '双人床', type: 'bed', x: 1.16, z: 7.1, w: 1.8, d: 2, angle: 90 },
   // Proposed placements for the two spaces left blank in the drawings.
-  { id: 'play-mat', floor: 'upper', room: '儿童娱乐区', name: '软垫与玩具', type: 'play-mat', x: 1.77, z: 1.38, w: 1.85, d: 1.48, angle: 0 },
+  { id: 'play-mat', floor: 'upper', room: '儿童娱乐区', name: '软垫与玩具', type: 'play-mat', x: 1.77, z: 1.38, w: 1.85, d: 1.48, angle: 0, toys: playToys },
   { id: 'play-storage', floor: 'upper', room: '儿童娱乐区', name: '玩具收纳柜', type: 'shelf', x: 1.79, z: 0.35, w: 1.56, d: 0.4, h: 0.64, shelves: 2, bins: true, angle: 0 },
   { id: 'study-desk', floor: 'upper', room: '书房兼卧室', name: '书桌与座椅', type: 'desk', x: 11.0, z: 4.69, w: 1.5, d: 1.27, deskDepth: 0.62, angle: -90 },
   { id: 'study-shelf', floor: 'upper', room: '书房兼卧室', name: '书柜', type: 'shelf', x: 8.63, z: 4.78, w: 1.36, d: 0.37, h: 1.4, shelves: 3, angle: 90 },

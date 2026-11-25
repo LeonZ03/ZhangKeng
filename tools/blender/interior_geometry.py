@@ -88,6 +88,8 @@ def maps(artifacts):
         ('linen', 'Ivory washed linen', (230, 223, 209), .82, weave * .82),
         ('sage', 'Olive plain weave', (145, 150, 117), .88, weave),
         ('umber', 'Caramel cotton weave', (169, 125, 89), .83, weave),
+        ('dustyBlue', 'Dusty blue cotton canvas', (160, 175, 191), .87, weave * .82),
+        ('taupe', 'Warm gray washed linen', (190, 180, 170), .85, weave * .78),
         ('massage_leather', 'Black grained upholstery', (32, 31, 30), .54, cloud * .5),
     ]
     with TemporaryDirectory(prefix='finish-maps-', dir=artifacts) as temporary:
@@ -106,6 +108,9 @@ def maps(artifacts):
         ('green', 'Rubber plant · deep green', (68, 92, 52), .51, 0),
         ('newleaf', 'Rubber plant · new growth', (108, 128, 67), .57, 0),
         ('soil', 'Dry potting soil', (96, 77, 58), .94, 0),
+        ('toyClay', 'Clay-red painted wood', (174, 96, 75), .54, 0),
+        ('toyOchre', 'Ochre painted wood', (201, 148, 73), .54, 0),
+        ('toyBlue', 'Denim blue painted wood', (80, 116, 152), .54, 0),
         ('massage_shell', 'Satin black molded shell', (31, 33, 36), .40, .16),
         ('massage_trim', 'Anodized smoke trim', (82, 86, 91), .38, .61),
         ('massage_inset', 'Charcoal padded inserts', (51, 49, 47), .63, 0),
@@ -175,7 +180,7 @@ class Geometry:
         if any(node.type == 'TEX_IMAGE' for node in finish.node_tree.nodes):
             layer = mesh.uv_layers.new()
             grain_axis = 'xyz'.index(grain)
-            woven = mat in {'sofa', 'linen', 'sage', 'umber', 'massage_leather'}
+            woven = mat in {'sofa', 'linen', 'sage', 'umber', 'dustyBlue', 'taupe', 'massage_leather'}
             wood = mat in {'oak', 'walnut', 'floorwood'}
             scale = (8, 8) if woven else (2.8, .72) if wood else (1.8, 1.8)
             shift = (.5 + .245 * at[0] + .461 * at[1] + .307 * at[2], .5) if wood else (.5, .5)
