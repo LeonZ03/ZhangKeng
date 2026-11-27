@@ -16,6 +16,44 @@ const state = {
   furniture: true, labels: true, item: '', measuring: false,
 };
 
+function connectFullscreen() {
+  const page = document.documentElement;
+  const button = $('fullscreen-toggle');
+  let fillsViewport = false;
+  let switching = false;
+
+  function syncButton() {
+    const active = fillsViewport || document.fullscreenElement === page;
+    page.classList.toggle('viewer-fullscreen', active);
+    const label = active ? '退出全屏' : '进入全屏';
+    button.setAttribute('aria-label', label);
+    button.title = label;
+  }
+
+  button.addEventListener('click', async () => {
+    if (switching) return;
+    switching = true;
+    const nativeFullscreen = document.fullscreenElement === page;
+    const entering = !nativeFullscreen && !fillsViewport;
+    try {
+      if (nativeFullscreen) {
+        await document.exitFullscreen();
+      } else if (entering && document.fullscreenEnabled && page.requestFullscreen) {
+        await page.requestFullscreen({ navigationUI: 'hide' });
+      } else {
+        fillsViewport = entering;
+      }
+    } catch {
+      // Embedded browsers can decline fullscreen even when the API is available.
+      fillsViewport = entering;
+    } finally {
+      switching = false;
+      syncButton();
+    }
+  });
+  document.addEventListener('fullscreenchange', syncButton);
+}
+
 function connectPhoneSettings() {
   const sidebarHost = inspector.parentElement;
   const phoneViewport = matchMedia('(max-width: 730px), (pointer: coarse) and (max-height: 600px)');
@@ -35,6 +73,7 @@ function connectPhoneSettings() {
   placeInspector();
 }
 
+connectFullscreen();
 connectPhoneSettings();
 
 function loadPlacements() {

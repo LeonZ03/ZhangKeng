@@ -28,6 +28,7 @@ h1, h2, p { margin: 0; }
 .masthead, .workbench { position: relative; pointer-events: none; }
 .masthead { z-index: 2; flex: none; min-height: 90px; padding: 16px clamp(16px, 3.2vw, 52px); display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .masthead button, .toolbar button, .inspector, .camera-controls, .model-retry { pointer-events: auto; }
+.header-actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .brand { display: flex; gap: 15px; align-items: center; padding-inline-end: 7px; }
 .brand-mark { width: 45px; height: 45px; border-radius: 10px; background: var(--accent); color: #f9f6ed; position: relative; flex: 0 0 auto; }
 .brand-mark::before { content: ""; position: absolute; top: 12px; left: 14px; width: 16px; height: 16px; rotate: 45deg; border-left: 1.5px solid currentColor; border-top: 1.5px solid currentColor; }
@@ -41,6 +42,11 @@ h1 { font: 700 clamp(23px, 2.2vw, 32px)/1.1 var(--serif); letter-spacing: .055em
 .outline-button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
 .icon-button { min-width: 40px; padding: 0; }
 .button-icon { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+#fullscreen-toggle, .fullscreen-exit { display: none; }
+.viewer-fullscreen .masthead { position: fixed; inset: 0 0 auto; justify-content: flex-end; }
+.viewer-fullscreen .brand, .viewer-fullscreen .view-footer, .viewer-fullscreen .fullscreen-enter { display: none; }
+.viewer-fullscreen #fullscreen-toggle { display: inline-flex; }
+.viewer-fullscreen .fullscreen-exit { display: block; }
 .workbench { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(256px, 290px); grid-template-rows: minmax(0, 1fr); gap: 18px; align-items: start; padding: 20px clamp(16px, 3.2vw, 52px) 22px; }
 .inspector { max-height: 100%; background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; overflow: auto; box-shadow: 0 2px 12px rgb(50 46 33 / 3%); }
 .view { display: flex; flex-direction: column; min-height: 0; min-width: 0; align-self: stretch; }
@@ -198,14 +204,18 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
 }
 @media (max-width: 730px), (pointer: coarse) and (max-height: 600px) {
   body {
+    --phone-top: max(6px, env(safe-area-inset-top));
     --phone-left: max(12px, env(safe-area-inset-left));
     --phone-right: max(12px, env(safe-area-inset-right));
     --phone-bottom: max(8px, env(safe-area-inset-bottom));
   }
   .masthead {
     min-height: 56px;
-    padding: max(6px, env(safe-area-inset-top)) var(--phone-right) 6px var(--phone-left);
+    padding: var(--phone-top) var(--phone-right) 6px var(--phone-left);
+    gap: 8px;
   }
+  #about-open { padding-inline: 10px; }
+  #fullscreen-toggle { display: inline-flex; }
   .brand { gap: 9px; }
   .brand-mark { scale: .8; margin-inline: -4px; }
   .brand h1 { font-size: 22px; }
@@ -230,6 +240,7 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
   .view-caption p { font-size: 14px; }
   .compass { right: var(--phone-right); top: 10px; width: 35px; height: 44px; }
   .compass i { width: 14px; height: 14px; }
+  .viewer-fullscreen .view-caption, .viewer-fullscreen .compass { top: calc(var(--phone-top) + 52px); }
   .camera-controls { right: var(--phone-right); bottom: 8px; }
   .view-status { left: var(--phone-left); bottom: 65px; max-width: min(330px, calc(100% - var(--phone-left) - var(--phone-right))); }
   .view-footer { order: 1; min-height: 26px; padding: 4px var(--phone-right) 6px var(--phone-left); font-size: 11px; }
