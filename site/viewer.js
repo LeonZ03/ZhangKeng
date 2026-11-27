@@ -57,15 +57,15 @@ function connectFullscreen() {
 function connectPhoneSettings() {
   const sidebarHost = inspector.parentElement;
   const phoneViewport = matchMedia('(max-width: 730px), (pointer: coarse) and (max-height: 600px)');
+  const phoneLandscape = matchMedia('(pointer: coarse) and (orientation: landscape) and (max-height: 600px)');
   function placeInspector() {
-    if (phoneViewport.matches) {
-      phoneSettings.append(inspector);
-    } else {
-      if (phoneSettings.open) phoneSettings.close();
-      sidebarHost.append(inspector);
-    }
+    const useSheet = phoneViewport.matches && !phoneLandscape.matches;
+    if (!useSheet && phoneSettings.open) phoneSettings.close();
+    const host = useSheet ? phoneSettings : sidebarHost;
+    if (inspector.parentElement !== host) host.append(inspector);
   }
   phoneViewport.addEventListener('change', placeInspector);
+  phoneLandscape.addEventListener('change', placeInspector);
   $('phone-settings-open').addEventListener('click', () => phoneSettings.showModal());
   phoneSettings.addEventListener('click', event => {
     if (event.target === phoneSettings && event.clientY < phoneSettings.getBoundingClientRect().top) phoneSettings.close();
@@ -681,11 +681,6 @@ function makeViewer() {
     show({ reset: state.measuring });
   });
   $('reset-view').addEventListener('click', resetCamera);
-  for (const [id, factor] of [['zoom-in', 1.18], ['zoom-out', 1 / 1.18]]) $(id).addEventListener('click', () => {
-    camera.zoom = THREE.MathUtils.clamp(camera.zoom * factor, controls.minZoom, controls.maxZoom);
-    camera.updateProjectionMatrix();
-    renderSoon();
-  });
   const offsets = { north: [0, -0.1], south: [0, 0.1], west: [-0.1, 0], east: [0.1, 0] };
   for (const button of document.querySelectorAll('[data-nudge]')) button.addEventListener('click', () => {
     const value = saved.get(state.item) ?? items.get(state.item);

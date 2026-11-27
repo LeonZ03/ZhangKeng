@@ -27,7 +27,7 @@ h1, h2, p { margin: 0; }
 
 .masthead, .workbench { position: relative; pointer-events: none; }
 .masthead { z-index: 2; flex: none; min-height: 90px; padding: 16px clamp(16px, 3.2vw, 52px); display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.masthead button, .toolbar button, .inspector, .camera-controls, .model-retry { pointer-events: auto; }
+.masthead button, .toolbar button, .inspector, .model-retry { pointer-events: auto; }
 .header-actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .brand { display: flex; gap: 15px; align-items: center; padding-inline-end: 7px; }
 .brand-mark { width: 45px; height: 45px; border-radius: 10px; background: var(--accent); color: #f9f6ed; position: relative; flex: 0 0 auto; }
@@ -84,10 +84,7 @@ h1 { font: 700 clamp(23px, 2.2vw, 32px)/1.1 var(--serif); letter-spacing: .055em
 .model-retry { margin-top: 8px; min-height: 34px; pointer-events: auto; font-size: 12px; }
 .compass { pointer-events: none; position: absolute; right: 17px; top: 17px; display: grid; align-content: center; place-items: center; gap: 3px; border: 1px solid #d5d3c7; width: 43px; height: 55px; background: #fcfaf1df; border-radius: 24px; color: #444b3b; font-size: 11px; font-weight: 700; }
 .compass i { display: block; background: var(--accent); height: 18px; width: 17px; clip-path: polygon(50% 0, 96% 97%, 50% 71%, 4% 97%); }
-.camera-controls { position: absolute; bottom: 15px; right: 15px; display: flex; gap: 3px; padding: 3px; border: 1px solid #d4d1c5; background: #fcfaf2; box-shadow: 0 2px 12px #39351612; border-radius: 8px; }
-.camera-controls button { min-width: 41px; height: 39px; border: 0; border-radius: 5px; font: 500 23px/1 system-ui; background: transparent; }
-.camera-controls button:hover { background: var(--active); }
-.exploring .view-caption, .exploring .camera-controls, .exploring .compass { display: none; }
+.exploring .view-caption, .exploring .compass { display: none; }
 .workbench:has(.stage.exploring) > .inspector { visibility: hidden; }
 #viewport canvas.explore-pickable { cursor: pointer; }
 #viewport canvas.explore-looking { cursor: grabbing; }
@@ -109,7 +106,7 @@ h1 { font: 700 clamp(23px, 2.2vw, 32px)/1.1 var(--serif); letter-spacing: .055em
 .fly-directions [data-fly="back"] { grid-area: 2 / 2; }
 .fly-directions [data-fly="right"] { grid-area: 2 / 3; }
 .fly-height { inset: auto 12px 12px auto; }
-.view-status { position: absolute; left: 15px; bottom: 15px; max-width: calc(100% - 165px); background: #fdfbf2f5; border: 1px solid #d9d7ca; border-radius: 8px; padding: 9px 12px; line-height: 1.5; font-size: 13px; color: var(--ink); box-shadow: 0 2px 12px #3935161a; }
+.view-status { position: absolute; left: 15px; bottom: 15px; max-width: min(330px, calc(100% - 30px)); background: #fdfbf2f5; border: 1px solid #d9d7ca; border-radius: 8px; padding: 9px 12px; line-height: 1.5; font-size: 13px; color: var(--ink); box-shadow: 0 2px 12px #3935161a; }
 .view-error { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: min(380px, 85%); width: max-content; background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 20px; font-size: 15px; line-height: 1.7; }
 .labels { pointer-events: none; overflow: hidden; }
 .room-label { position: absolute; left: 0; top: 0; translate: -50% -50%; border-radius: 5px; background: #fdfaf0ee; color: #373c31; padding: 3px 6px; border: 1px solid #d5d1c1; font-size: 11px; font-weight: 650; white-space: nowrap; box-shadow: 0 1px 3px #47422b15; }
@@ -117,10 +114,7 @@ h1 { font: 700 clamp(23px, 2.2vw, 32px)/1.1 var(--serif); letter-spacing: .055em
 .room-label.level-tag { background: var(--accent); border-color: var(--accent); color: #fff; padding: 5px 9px; font-size: 12px; }
 .view-footer { display: flex; min-height: 43px; padding: 8px 0; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--soft); }
 .view:has(.stage.exploring) .view-footer { min-height: 0; padding-block: 0; }
-.view:has(.stage.exploring) .unit { display: none; }
 #explore-detail { margin-block: 8px; }
-.unit { flex-shrink: 0; }
-.unit span { font: 500 11px/1.3 Consolas, monospace; margin-left: 4px; }
 
 .inspector-section { padding: 17px 16px; }
 .inspector-section + .inspector-section { border-top: 1px solid var(--line); }
@@ -144,7 +138,7 @@ select { min-height: 38px; min-width: 0; padding: 0 8px; background: var(--sheet
 input[type="checkbox"], input[type="range"] { accent-color: var(--accent); }
 input[type="checkbox"] { width: 16px; height: 16px; margin: 0; }
 .spacing { margin-top: 6px; }
-.spacing input { flex: 1; width: 70px; }
+.spacing input { flex: 1; width: 70px; min-width: 0; }
 .spacing output { min-width: 39px; color: var(--ink); font: 600 11px/1 Consolas, monospace; text-align: right; }
 .text-button { border: 0; background: transparent; padding: 3px 0 3px 3px; color: var(--accent); font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
 .text-button:disabled { color: #747667; text-decoration: none; }
@@ -205,6 +199,7 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
 @media (max-width: 730px), (pointer: coarse) and (max-height: 600px) {
   body {
     --phone-top: max(6px, env(safe-area-inset-top));
+    --phone-header-offset: calc(var(--phone-top) + 52px);
     --phone-left: max(12px, env(safe-area-inset-left));
     --phone-right: max(12px, env(safe-area-inset-right));
     --phone-bottom: max(8px, env(safe-area-inset-bottom));
@@ -240,12 +235,10 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
   .view-caption p { font-size: 14px; }
   .compass { right: var(--phone-right); top: 10px; width: 35px; height: 44px; }
   .compass i { width: 14px; height: 14px; }
-  .viewer-fullscreen .view-caption, .viewer-fullscreen .compass { top: calc(var(--phone-top) + 52px); }
-  .camera-controls { right: var(--phone-right); bottom: 8px; }
-  .view-status { left: var(--phone-left); bottom: 65px; max-width: min(330px, calc(100% - var(--phone-left) - var(--phone-right))); }
+  .viewer-fullscreen .view-caption, .viewer-fullscreen .compass { top: var(--phone-header-offset); }
+  .view-status { left: var(--phone-left); bottom: 8px; max-width: min(330px, calc(100% - var(--phone-left) - var(--phone-right))); }
   .view-footer { order: 1; min-height: 26px; padding: 4px var(--phone-right) 6px var(--phone-left); font-size: 11px; }
   .view:has(.stage.exploring) .view-footer { padding-bottom: var(--phone-bottom); }
-  .unit { display: none; }
   .fly-directions { left: var(--phone-left); grid-template-columns: repeat(3, 48px); }
   .fly-height { right: var(--phone-right); }
   .fly-controls button { width: 48px; height: 48px; border-radius: 12px; }
@@ -273,19 +266,38 @@ dialog::backdrop { background: rgb(30 33 26 / 45%); }
   }
   .phone-settings-heading h2 { font-size: 18px; }
   #phone-settings .inspector { max-height: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
-  #phone-settings select { min-height: 44px; font-size: 16px; }
+  .inspector select { min-height: 44px; font-size: 16px; }
   #about .dialog-heading h2 { font-size: 18px; }
   .layer-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inspector-section { padding: 14px var(--phone-right) 14px var(--phone-left); }
   .switches label { min-height: 44px; }
   .outline-button { min-height: 44px; }
   .icon-button { min-width: 44px; }
-  .camera-controls button, .item-controls button { min-height: 44px; min-width: 44px; }
+  .item-controls button { min-height: 44px; min-width: 44px; }
   .room-label { font-size: 10px; padding: 3px 4px; }
 }
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
-  .toolbar { flex-direction: row; align-items: center; }
-  .modes { order: 0; flex: 1; }
+  .workbench {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(180px, 32vw, 270px);
+    gap: 10px;
+    padding: 0 var(--phone-right) var(--phone-bottom) var(--phone-left);
+  }
+  .workbench > .inspector { display: block; min-width: 0; min-height: 0; overscroll-behavior: contain; }
+  .viewer-fullscreen .workbench > .inspector { margin-block-start: var(--phone-header-offset); }
+  .workbench:has(.stage.exploring) > .view { grid-column: 1 / -1; }
+  .workbench:has(.stage.exploring) > .inspector, #phone-settings-open { display: none; }
+  .inspector-section { padding-inline: 12px; }
+  .layer-list { grid-template-columns: 1fr; }
+  .item-controls { flex-wrap: wrap; }
+  .toolbar { flex-flow: row wrap; align-items: center; padding: 4px 0 0; }
+  .modes { order: 0; flex: 1 0 min(100%, 245px); }
+  .modes button { font-size: clamp(11px, 1.6vw, 13px); padding-inline: 1px; }
+  .view-actions { margin-inline-start: auto; }
+  .view-footer { padding-inline: 0; }
+  .view-caption, .view-status, .fly-directions { left: 0; }
+  .view-status { max-width: min(330px, 100%); }
+  .compass, .fly-height { right: 0; }
 }
 @media (pointer: coarse) {
   .fly-controls { display: grid; position: absolute; gap: 4px; pointer-events: auto; }
