@@ -129,7 +129,7 @@ function makeViewer() {
   elementary.toneMapping = THREE.ACESFilmicToneMapping;
   elementary.toneMappingExposure = 1.16;
   const canvas = elementary.domElement;
-  canvas.setAttribute('aria-label', '可旋转、缩放和切换楼层的郑家大院三维模型');
+  canvas.setAttribute('aria-label', '可旋转、缩放和切换楼层的伴山小院三维模型');
   viewport.prepend(canvas);
 
   const camera = new THREE.OrthographicCamera(-12, 12, 9, -9, 0.1, 180);

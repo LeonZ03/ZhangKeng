@@ -156,7 +156,7 @@ export function createExplorer({ canvas, requestFrame, exit }) {
     hud.hidden = false;
     header.hidden = false;
     canvas.tabIndex = 0;
-    canvas.setAttribute('aria-label', '自由探索郑家大院，操作见右上角');
+    canvas.setAttribute('aria-label', '自由探索伴山小院，操作见右上角');
     reset();
   }
 
