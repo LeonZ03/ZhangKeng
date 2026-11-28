@@ -35,13 +35,13 @@ def faucet(g, node, x, y, z, height=.216, reach=.124):
                                            (x + .041, y, z + .106)], .007)
 
 
-def interactive_faucet(g, parent, x, y, z, height, reach, key, label='厨房水龙头'):
+def interactive_faucet(g, parent, x, y, z, height, reach, key, label, stream_length):
     # Pivot is the actual spout outlet; the faucet and its visible water stream
     # remain selectable as one authored fixture.
     node = g.group(parent, label, (x, y - reach, z + height * .43))
     node['exploreAction'] = 'water'
     node['exploreLabel'] = label
-    node['exploreAmount'] = .11
+    node['exploreAmount'] = stream_length
     g.ctx.nodes[key] = node
     faucet(g, node, 0, reach, -height * .43, height, reach)
 
@@ -74,19 +74,21 @@ def bath(g, parent, plan):
     g.lathe(node, 'Bowl water', 'water', (x, -.418, .257), [(0, 0), (.063, 0), (.063, .002), (0, .002)], aspect=1.3)
     x = 1.44
     g.box(node, 'Floating vanity', 'oak', (x, -.300, .448), (.674, .492, .609), .012)
-    for z in [.300, .527]:
-        g.box(node, 'Vanity drawer front', 'oak', (x, -.557, z), (.653, .026, .219), .004, grain='x')
-        g.box(node, 'Vanity bar pull', 'bronze', (x, -.583, z + .059), (.191, .027, .013), .004)
+    # Two separate full-height leaves with a narrow center reveal read as side-hinged doors.
     for side in [-1, 1]:
-        g.box(node, 'Basin countertop edge', 'quartz', (x + side * .295, -.303, .782), (.153, .566, .060), .009)
-    for y in [-.541, -.066]:
-        g.box(node, 'Basin countertop return', 'quartz', (x, y, .782), (.458, .090, .060), .006)
-    g.lathe(node, 'Oval vitreous-china vessel', 'ceramic', (x, -.302, .795), [
+        g.box(node, 'Vanity side-hinged door', 'oak', (x + side * .164, -.553, .448),
+              (.322, .026, .566), .005, grain='x')
+        pull = g.lathe(node, 'Vanity door knob', 'bronze', (x + side * .105, -.566, .448), [
+            (0, 0), (.007, 0), (.007, .009), (.011, .013), (.011, .019), (.008, .022), (0, .022)], segments=16)
+        pull.rotation_euler.x = pi / 2
+    # One continuous slab fully covers the carcass; the vessel and tap sit on its top face.
+    g.box(node, 'Quartz basin countertop', 'quartz', (x, -.303, .782), (.694, .586, .060), .008)
+    g.lathe(node, 'Oval vitreous-china vessel', 'ceramic', (x, -.302, .812), [
         (0, 0), (.154, 0), (.189, .035), (.225, .099), (.227, .113), (.211, .122),
         (.199, .102), (.173, .059), (.104, .021), (0, .020)], aspect=.825)
-    g.lathe(node, 'Vanity basin waste', 'sink', (x, -.302, .816), [
+    g.lathe(node, 'Vanity basin waste', 'sink', (x, -.302, .833), [
         (0, 0), (.022, 0), (.022, .003), (0, .003)], segments=20)
-    faucet(g, node, x, -.071, .814, .160, .134)
+    faucet(g, node, x, -.071, .812, .305, .167)
     g.box(node, 'Bronze mirror surround', 'bronze', (x, -.018, 1.332), (.597, .027, .776), .012)
     g.box(node, 'Silvered bath mirror', 'mirror', (x, -.035, 1.332), (.574, .010, .753), .004)
 
@@ -107,16 +109,20 @@ def kitchen(g, parent):
         g.box(node, 'North quartz counter', 'quartz', (x, -.412, .917), (w, .626, .062), .007, grain='x')
     for y, d in [(-.18, .163), (-.664, .123)]:
         g.box(node, 'Worktop sink surround', 'quartz', (9.879, y, .917), (.607, d, .062), .006)
-    for x in [9.724, 10.033]:
-        sink(g, node, 'Undermount stainless bowl', (x, -.442, .937), .157, .192, .144, 'sink')
+    basin_y, basin_top, basin_depth = -.442, .937, .144
+    tap_y, tap_z, tap_height = -.191, .948, .242
+    stream_length = tap_z + tap_height * .43 - (basin_top - basin_depth + .004)
+    for x, key, label in [(9.724, 'ExploreKitchenTap', '左槽水龙头'),
+                          (10.033, 'ExploreKitchenTapRight', '右槽水龙头')]:
+        sink(g, node, 'Undermount stainless bowl', (x, basin_y, basin_top), .157, .192, basin_depth, 'sink')
+        interactive_faucet(g, node, x, tap_y, tap_z, tap_height, tap_y - basin_y, key, label, stream_length)
     g.box(node, 'Center sink divider', 'sink', (9.878, -.441, .943), (.026, .377, .012), .006)
-    interactive_faucet(g, node, 9.879, -.191, .951, .242, .149, 'ExploreKitchenTap')
     g.box(node, 'East cabinet base', 'cabinet', (11.388, -1.388, .492), (.564, 1.331, .815))
     g.box(node, 'East quartz return', 'quartz', (11.389, -1.386, .917), (.611, 1.321, .062), .006, grain='y')
     g.box(node, 'Oven dark glass front', 'graphite', (11.087, -1.377, .530), (.023, .598, .529), .007)
     g.box(node, 'Oven handle', 'sink', (11.055, -1.378, .719), (.035, .463, .026), .008, grain='y')
     g.box(node, 'Gas hob insert', 'graphite', (11.387, -1.388, .953), (.509, .741, .022), .009)
-    for y in [-1.180, -1.553]:
+    for y, side, label in [(-1.180, 'Left', '左灶旋钮'), (-1.553, 'Right', '右灶旋钮')]:
         x = 11.391
         g.lathe(node, 'Sealed burner ring', 'sink', (x, y, .957), [
             (0, 0), (.086, 0), (.087, .015), (.075, .020), (.047, .013), (0, .013)], segments=24)
@@ -125,9 +131,18 @@ def kitchen(g, parent):
         for angle in [pi / 4, 3 * pi / 4, 5 * pi / 4, 7 * pi / 4]:
             g.box(node, 'Cast-iron grate finger', 'graphite',
                   (x + .097 * cos(angle), y + .097 * sin(angle), .987), (.067, .026, .019), .004, rotation=angle)
-    for y in [-1.676, -1.735]:
-        g.lathe(node, 'Hob knob', 'graphite', (11.206, y, .966), [
-            (0, 0), (.023, 0), (.023, .017), (.020, .019), (0, .019)], segments=20)
+        control_x, control_z = 11.222, .966
+        control = g.group(node, 'ExploreKitchenBurner' + side, (control_x, y, control_z))
+        control['exploreAction'] = 'burner'
+        control['exploreLabel'] = label
+        control['exploreAmount'] = 1.0
+        # glTF uses Y-up; the knob and its burner share the same north–south position.
+        control['exploreFlameOffset'] = [x - control_x, .976 - control_z, 0.0]
+        control['exploreFlameRadius'] = .064
+        g.lathe(control, 'Hob knob', 'graphite', (0, 0, 0), [
+            (0, 0), (.024, 0), (.027, .005), (.024, .019), (.020, .022), (0, .022)], segments=20)
+        g.box(control, 'Raised knob grip', 'graphite', (0, 0, .024), (.038, .011, .008), .002)
+        g.box(control, 'Metallic position mark', 'sink', (-.014, 0, .029), (.010, .004, .002), 0)
     # One insulated carcass carries two aligned, gasketed leaves. The low
     # freezer and full-height fresh-food door retain the plan's existing
     # footprint and 1.818 m overall height.

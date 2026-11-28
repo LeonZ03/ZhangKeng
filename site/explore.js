@@ -98,7 +98,7 @@ export function createExplorer({ canvas, requestFrame, exit }) {
       aimChanged = false;
       lastPick = now;
     }
-    const changed = cameraChanged || motion.changed;
+    const changed = cameraChanged || motion.changed || motion.effectsChanged;
     const moving = travelling || motion.moving || aimChanged;
     cameraChanged = false;
     lastFrame = moving ? now : 0;

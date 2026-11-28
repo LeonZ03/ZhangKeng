@@ -238,23 +238,179 @@ def stones(scene, parent, mat, dark):
 
 def kitchen(scene, parent, stainless, bronze, rock):
     sink, tap, cabinet = MeshBuilder(), MeshBuilder(), MeshBuilder()
-    x, y, z = -2.36 + 0.77, 4.61 + 1.16, DATUM + 1.006
-    # Raised rim and modeled bowl above the appliance location on the designed cabinet.
-    sink.box((x, y, z + 0.025), (0.56, 0.38, 0.025), bevel=0.007)
-    for dx in [-0.269, 0.269]:
-        sink.box((x + dx, y, z + 0.048), (0.031, 0.38, 0.031), bevel=0.004)
-    for dy in [-0.178, 0.178]:
-        sink.box((x, y + dy, z + 0.048), (0.55, 0.025, 0.031), bevel=0.004)
-    for a, b in zip([(x + 0.08, y + 0.15, z), (x + 0.08, y + 0.15, z + 0.205),
-                     (x + 0.08, y + 0.10, z + 0.252)],
-                    [(x + 0.08, y + 0.15, z + 0.205), (x + 0.08, y + 0.10, z + 0.252),
-                     (x + 0.08, y - 0.045, z + 0.251)]):
-        tap.branch(a, b, 0.012, 0.012, sides=9)
+    hob, burner, controls = MeshBuilder(), MeshBuilder(), MeshBuilder()
+    x, y = -1.59, 5.77
+    top = DATUM + 0.9925
+    hob_x = -3.21
+
+    def kitchen_ancestor(obj):
+        while obj:
+            if obj.get("source_name", obj.name) == "西北户外厨房":
+                return True
+            obj = obj.parent
+        return False
+
+    def world_box(obj):
+        corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+        low = Vector(tuple(min(point[i] for point in corners) for i in range(3)))
+        high = Vector(tuple(max(point[i] for point in corners) for i in range(3)))
+        return (low + high) * 0.5, high - low
+
+    # Remove the three simple source boxes at their measured positions. Split
+    # the original 2.89 m top into four pieces around the sink cutout, keeping
+    # its finish and thickness while making the bowl a real through-opening.
+    counter_material = rock
+    counter_found = False
+    core_material = rock
+    core_found = False
+    for obj in list(descendants(parent)):
+        if obj.type != "MESH" or not kitchen_ancestor(obj):
+            continue
+        center, size = world_box(obj)
+        if (abs(center.x + 2.36) < 0.04 and abs(center.y - y) < 0.04 and
+                abs(center.z - (top - 0.0375)) < 0.04 and
+                abs(size.x - 2.89) < 0.06 and abs(size.y - 0.62) < 0.06 and
+                abs(size.z - 0.075) < 0.02):
+            if obj.data.materials:
+                counter_material = obj.data.materials[0]
+            bpy.data.objects.remove(obj, do_unlink=True)
+            counter_found = True
+        elif (abs(center.x + 2.36) < 0.04 and abs(center.y - y) < 0.04 and
+              abs(size.x - 2.83) < 0.06 and abs(size.y - 0.56) < 0.06 and
+              abs(size.z - 0.88) < 0.06):
+            if obj.data.materials:
+                core_material = obj.data.materials[0]
+            bpy.data.objects.remove(obj, do_unlink=True)
+            core_found = True
+        elif (abs(center.y - y) < 0.05 and abs(center.z - (top + 0.0075)) < 0.05 and
+              ((abs(center.x - hob_x) < 0.05 and abs(size.x - 0.54) < 0.06 and
+                abs(size.y - 0.39) < 0.06) or
+               (abs(center.x - x) < 0.05 and abs(size.x - 0.60) < 0.06 and
+                abs(size.y - 0.38) < 0.06))):
+            bpy.data.objects.remove(obj, do_unlink=True)
+    if counter_found:
+        counter = MeshBuilder()
+        counter_bottom = top - 0.075
+        counter_center_z = (top + counter_bottom) / 2
+        x0, x1 = -2.36 - 2.89 / 2, -2.36 + 2.89 / 2
+        y0, y1 = y - 0.62 / 2, y + 0.62 / 2
+        hole_x0, hole_x1 = x - 0.514 / 2, x + 0.514 / 2
+        hole_y0, hole_y1 = y - 0.328 / 2, y + 0.328 / 2
+        for left, right in ((x0, hole_x0), (hole_x1, x1)):
+            counter.box(((left + right) / 2, y, counter_center_z),
+                        (right - left, y1 - y0, 0.075), bevel=0.002)
+        for near, far in ((y0, hole_y0), (hole_y1, y1)):
+            counter.box(((hole_x0 + hole_x1) / 2, (near + far) / 2, counter_center_z),
+                        (hole_x1 - hole_x0, far - near, 0.075), bevel=0.002)
+        counter.object(scene, parent, "Outdoor kitchen counter with sink cutout", counter_material)
+    if core_found:
+        core = MeshBuilder()
+        core_x0, core_x1 = -2.36 - 2.83 / 2, -2.36 + 2.83 / 2
+        core_y0, core_y1 = y - 0.56 / 2, y + 0.56 / 2
+        core_bottom, core_top = DATUM + 0.04, DATUM + 0.92
+        # Leave clearance below the steel basin floor to avoid overlapping faces.
+        recess_bottom = top - 0.111
+        lower_height = recess_bottom - core_bottom
+        core.box((-2.36, y, core_bottom + lower_height / 2),
+                 (2.83, 0.56, lower_height), bevel=0.002)
+        opening_x0, opening_x1 = x - 0.514 / 2, x + 0.514 / 2
+        opening_y0, opening_y1 = y - 0.328 / 2, y + 0.328 / 2
+        upper_height = core_top - recess_bottom
+        upper_center_z = (core_top + recess_bottom) / 2
+        for left, right in ((core_x0, opening_x0), (opening_x1, core_x1)):
+            core.box(((left + right) / 2, y, upper_center_z),
+                     (right - left, 0.56, upper_height), bevel=0.002)
+        for near, far in ((core_y0, opening_y0), (opening_y1, core_y1)):
+            core.box(((opening_x0 + opening_x1) / 2, (near + far) / 2, upper_center_z),
+                     (opening_x1 - opening_x0, far - near, upper_height), bevel=0.002)
+        core.object(scene, parent, "Outdoor kitchen sink clearance through cabinet core", core_material)
+
+    # The drawing's "单铜钱/双铜钱" labels describe stone-paving motifs, not
+    # appliance specifications. Treat the black square as a compact twin-hob
+    # design assumption; the source gives no fuel or appliance model, so omit
+    # flames and ignition hardware.
+    hob_center = (hob_x, y, top + 0.009)
+    dark_glass = solid("Outdoor twin hob dark ceramic glass", (31, 33, 34), 0.24, 0.16)
+    hob.box(hob_center, (0.61, 0.43, 0.018), bevel=0.014)
+    for burner_x in (hob_center[0] - 0.145, hob_center[0] + 0.145):
+        # Two fine annular rings make the burner geometry legible without
+        # creating dense appliance meshes.
+        for radius, tube_radius, z in ((0.101, 0.010, top + 0.023),
+                                       (0.070, 0.006, top + 0.026)):
+            segments = 24
+            for index in range(segments):
+                a, b = 2 * pi * index / segments, 2 * pi * (index + 1) / segments
+                outer = radius + tube_radius
+                inner = radius - tube_radius
+                burner.face([
+                    (burner_x + outer * cos(a), y + outer * sin(a), z),
+                    (burner_x + outer * cos(b), y + outer * sin(b), z),
+                    (burner_x + inner * cos(b), y + inner * sin(b), z),
+                    (burner_x + inner * cos(a), y + inner * sin(a), z),
+                ])
+        burner.box((burner_x, y, top + 0.027), (0.086, 0.086, 0.012), bevel=0.006)
+        for angle in (pi / 4, 3 * pi / 4, 5 * pi / 4, 7 * pi / 4):
+            start = (burner_x + 0.047 * cos(angle), y + 0.047 * sin(angle), top + 0.034)
+            end = (burner_x + 0.101 * cos(angle), y + 0.101 * sin(angle), top + 0.034)
+            burner.branch(start, end, 0.004, 0.004, sides=5)
+    for knob_x in (hob_center[0] - 0.145, hob_center[0] + 0.145):
+        controls.branch((knob_x, y - 0.172, top + 0.019),
+                        (knob_x, y - 0.172, top + 0.043), 0.022, 0.019, sides=12)
+        controls.branch((knob_x, y - 0.191, top + 0.044),
+                        (knob_x, y - 0.207, top + 0.044), 0.004, 0.004, sides=5)
+
+    # Thin steel flange plus sloped walls and a low basin floor read as a
+    # genuine open inset. The floor closes the opening, so the counter cannot
+    # visually continue through the bowl; the drain is a separate small ring.
+    cut_w, cut_d = 0.514, 0.328
+    rim_w, rim_d, rim_t = 0.56, 0.38, 0.008
+    rim_z = top + 0.006
+    sink.box((x, y - (rim_d - 0.026) / 2, rim_z), (rim_w, 0.026, rim_t), bevel=0.005)
+    sink.box((x, y + (rim_d - 0.026) / 2, rim_z), (rim_w, 0.026, rim_t), bevel=0.005)
+    for side in (-1, 1):
+        sink.box((x + side * (rim_w - 0.026) / 2, y, rim_z),
+                 (0.026, rim_d - 0.052, rim_t), bevel=0.005)
+    lip_z, floor_z = top + 0.010, top - 0.105
+    outer = [(x - cut_w / 2, y - cut_d / 2, lip_z),
+             (x + cut_w / 2, y - cut_d / 2, lip_z),
+             (x + cut_w / 2, y + cut_d / 2, lip_z),
+             (x - cut_w / 2, y + cut_d / 2, lip_z)]
+    inner = [(x - 0.207, y - 0.116, floor_z), (x + 0.207, y - 0.116, floor_z),
+             (x + 0.207, y + 0.116, floor_z), (x - 0.207, y + 0.116, floor_z)]
+    for i in range(4):
+        j = (i + 1) % 4
+        sink.face([outer[i], outer[j], inner[j], inner[i]])
+    sink.face(inner)
+    # Recessed waste flange and perforated drain are kept low-poly.
+    drain_x, drain_y = x + 0.105, y + 0.025
+    for index in range(20):
+        a, b = 2 * pi * index / 20, 2 * pi * (index + 1) / 20
+        sink.face([(drain_x + 0.029 * cos(a), drain_y + 0.029 * sin(a), floor_z + 0.003),
+                   (drain_x + 0.029 * cos(b), drain_y + 0.029 * sin(b), floor_z + 0.003),
+                   (drain_x + 0.022 * cos(b), drain_y + 0.022 * sin(b), floor_z + 0.003),
+                   (drain_x + 0.022 * cos(a), drain_y + 0.022 * sin(a), floor_z + 0.003)])
+
+    # A compact satin mixer behind the basin, with a forward-facing outlet.
+    tap.branch((x + 0.11, y + 0.162, top + 0.011),
+               (x + 0.11, y + 0.162, top + 0.035), 0.027, 0.022, sides=10)
+    tap.branch((x + 0.11, y + 0.162, top + 0.033),
+               (x + 0.11, y + 0.162, top + 0.220), 0.011, 0.011, sides=9)
+    tap.branch((x + 0.11, y + 0.162, top + 0.220),
+               (x + 0.11, y + 0.115, top + 0.263), 0.011, 0.011, sides=9)
+    tap.branch((x + 0.11, y + 0.115, top + 0.263),
+               (x + 0.11, y - 0.035, top + 0.263), 0.011, 0.009, sides=9)
+    tap.branch((x + 0.11, y - 0.035, top + 0.263),
+               (x + 0.11, y - 0.055, top + 0.242), 0.009, 0.009, sides=9)
+    tap.branch((x + 0.11, y + 0.162, top + 0.052),
+               (x + 0.155, y + 0.162, top + 0.073), 0.008, 0.006, sides=7)
     for i in range(5):
         xx = -3.49 + i * 0.565
         cabinet.box((xx, 5.477, DATUM + 0.51), (0.546, 0.028, 0.67), bevel=0.005)
         tap.box((xx, 5.454, DATUM + 0.733), (0.141, 0.022, 0.019), bevel=0.004)
-    sink.object(scene, parent, "Outdoor stainless sink and rim", stainless)
+    hob.object(scene, parent, "Outdoor twin burner hob glass", dark_glass)
+    burner.object(scene, parent, "Outdoor twin burner rings and pan supports", bronze)
+    controls.object(scene, parent, "Outdoor hob control knobs", bronze)
+    sink.object(scene, parent, "Outdoor recessed open stainless sink and drain", stainless)
     tap.object(scene, parent, "Outdoor faucet and cabinet hardware", bronze)
     cabinet.object(scene, parent, "Outdoor kitchen base fronts", rock)
 

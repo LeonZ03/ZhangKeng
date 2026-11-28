@@ -326,6 +326,24 @@ def dining(g, parent, item, tea=False):
                 g.plate(parent, 'Stoneware dining plate', 'ceramic', (x, y, top), .106)
         for y in [-.770, .770]:
             g.plate(parent, 'Stoneware end plate', 'ceramic', (0, y, top), .106)
+        # A compact pair sits to each guest's right. Each table position has
+        # its own local right vector, so the two end settings turn with the
+        # diners while the side settings remain parallel to the table edge.
+        settings = [(-.297, y, pi / 2) for y in [-.632, 0, .632]]
+        settings += [(.297, y, -pi / 2) for y in [-.632, 0, .632]]
+        settings += [(0, .770, 0), (0, -.770, pi)]
+        for px, py, facing in settings:
+            right_x, right_y = -cos(facing), -sin(facing)
+            forward_x, forward_y = sin(facing), -cos(facing)
+            # Shift the pair 12 cm to the diner's right; 22 cm long, with a
+            # small tapered tip, leaving a clear gap from the 106 mm plate.
+            cx, cy = px + right_x * .119, py + right_y * .119
+            for spacing in (-.007, .007):
+                ox, oy = right_x * spacing, right_y * spacing
+                a = (cx - forward_x * .085 + ox, cy - forward_y * .085 + oy, top + .003)
+                b = (cx + forward_x * .051 + ox, cy + forward_y * .051 + oy, top + .003)
+                c = (cx + forward_x * .085 + ox, cy + forward_y * .085 + oy, top + .003)
+                g.tube(parent, 'Slim natural wood chopstick', 'walnut', [a, b, c], .0025, sides=6)
         g.lathe(parent, 'Earthenware centerpiece', 'sage', (0, 0, top), [
             (0, 0), (.068, 0), (.090, .037), (.063, .101), (.038, .118), (.033, .115), (.050, .032), (0, .012)])
 

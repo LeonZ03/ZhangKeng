@@ -26,7 +26,7 @@ LAYER_GROUPS = {
     "Yard": "04 庭院",
 }
 HIDDEN_IN_EXTERIOR = ("GroundSlice", "UpperSlice", "YardExisting")
-GLB_LIMIT = 24 * 1024 * 1024
+GLB_LIMIT = 25 * 1024 * 1024  # Cloudflare Pages limit, also checked by build-pages.mjs.
 
 
 def make_material(key, source):
