@@ -426,7 +426,8 @@ def kitchen(scene, parent, stainless, bronze, rock):
     tap.patch(points, [(row * sides + i, row * sides + (i + 1) % sides,
                         (row + 1) * sides + (i + 1) % sides, (row + 1) * sides + i)
                        for row in range(len(arch) - 1) for i in range(sides)], smooth=True)
-    tap.branch((x, y, top + 0.155), (x, y, top + 0.138), 0.0135, 0.0135, sides=sides)
+    outlet_z = top + 0.138
+    tap.branch((x, y, top + 0.155), (x, y, outlet_z), 0.0135, 0.0135, sides=sides)
     tap.branch((x + 0.010, tap_y, top + 0.059),
                (x + 0.046, tap_y, top + 0.078), 0.008, 0.006, sides=10)
     pulls = MeshBuilder()
@@ -437,7 +438,16 @@ def kitchen(scene, parent, stainless, bronze, rock):
     hob.object(scene, parent, "Outdoor twin burner hob glass", dark_glass)
     burner.object(scene, parent, "Outdoor twin burner rings and pan supports", bronze)
     sink.object(scene, parent, "Outdoor recessed open stainless sink and drain", stainless)
-    tap.object(scene, parent, "Outdoor deck-mounted gooseneck mixer", bronze)
+    outlet = bpy.data.objects.new("ExploreOutdoorTap", None)
+    parent.users_collection[0].objects.link(outlet)
+    outlet.parent = parent
+    outlet.location = (x, y, outlet_z)
+    outlet["exploreAction"] = "water"
+    outlet["exploreLabel"] = "室外水龙头"
+    outlet["exploreAmount"] = outlet_z - (floor_z + 0.004)
+    mixer = tap.object(scene, outlet, "Outdoor deck-mounted gooseneck mixer", bronze)
+    # Rebase the fixture on the nozzle so the water starts at its opening.
+    mixer.location = -outlet.location
     pulls.object(scene, parent, "Outdoor kitchen cabinet pulls", bronze)
     cabinet.object(scene, parent, "Outdoor kitchen base fronts", rock)
 
