@@ -2,11 +2,13 @@
 export const axes = { x: [0, 3.5, 8.3, 11.8], z: [0, 2.1, 3.6, 5.2, 7.8, 9, 9.9] };
 export const footprint = { west: -0.1, east: 11.9, north: -0.1, south: 9.1 };
 export const upperElevation = 3.3;
+export const sliceHeight = 0.95;
 export const yard = { west: -3.86, east: 13.66, north: -6.36, south: 11.86, radius: 1 };
 export const roof = { mainEave: 4.65, mainRidge: 7.02, crossEave: 5.72, crossRidge: 7.72 };
 
 const windowAt = (start, width, sill, height) => ({ start, width, sill, height, type: 'window' });
 const doorAt = (start, width, height, type = 'door') => ({ start, width, sill: 0, height, type });
+const oakDoorAt = (start, width, height, leaves) => ({ ...doorAt(start, width, height, 'oak-door'), leaves });
 const wall = (axis, position, start, end, openings = [], exterior = false, height, thickness = exterior ? 0.2 : 0.15) =>
   ({ axis, position, start, end, openings, exterior, height, thickness });
 
@@ -26,12 +28,12 @@ export const floors = {
       { name: '东侧卫生间', bounds: [9.58, 3.68, 11.7, 5.12], finish: 'bath' },
     ],
     walls: [
-      wall('x', 0, -0.1, 11.9, [windowAt(0.75, 2, 0.55, 2), windowAt(4.1, 2, 0.55, 2), doorAt(7.05, 1.05, 2.3), windowAt(9.05, 2, 0.55, 2)], true),
+      wall('x', 0, -0.1, 11.9, [windowAt(0.75, 2, 0.55, 2), windowAt(4.1, 2, 0.55, 2), oakDoorAt(7.05, 1.05, 2.3, 1), windowAt(9.05, 2, 0.55, 2)], true),
       wall('z', 0, 0.1, 8.9, [windowAt(4.05, 0.7, 0.55, 2)], true),
       wall('z', 11.8, 0.1, 8.9, [windowAt(4.05, 0.7, 0.55, 2)], true),
       wall('x', 9, -0.1, 3.6, [windowAt(0.75, 2, 0.35, 2.2)], true),
       wall('x', 9, 8.2, 11.9, [windowAt(9.05, 2, 0.35, 2.2)], true),
-      wall('x', 7.8, 3.6, 8.2, [doorAt(4.1, 1.5, 2.4, 'entry'), windowAt(5.9, 1.8, 0.35, 2.2)], true),
+      wall('x', 7.8, 3.6, 8.2, [oakDoorAt(4.1, 1.5, 2.4, 2), windowAt(5.9, 1.8, 0.35, 2.2)], true),
       wall('z', 3.5, 0.1, 3.6, [], false, 3.12, 0.2),
       wall('z', 3.5, 5.2, 7.8, [], false, 3.12, 0.2),
       wall('z', 3.5, 7.8, 8.9, [], true),

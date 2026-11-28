@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { floors, roof, upperElevation } from './plan.js';
+import { floors, roof, sliceHeight, upperElevation } from './plan.js';
 import { addMesh, beam, box, group, mats, outline, plate, round } from './geometry.js';
 import { buildFurniture } from './furniture.js';
 import { buildGarden } from './garden.js';
@@ -63,11 +63,12 @@ function frameOpening(parent, wall, opening, clip) {
   const top = Math.min(sill + height, clip);
   if (top <= sill) return;
   const clear = type === 'window' || type === 'slide' || type === 'entry';
+  const hasThreshold = clear || (type === 'oak-door' && opening.leaves === 2);
   const frame = clear || wall.exterior ? mats.frame : mats.wood;
   const fw = type === 'slide' ? 0.059 : 0.047;
   const thickness = type === 'window' ? 0.082 : 0.104;
   const hasHead = top === sill + height;
-  const innerBottom = clear ? sill + fw : sill;
+  const innerBottom = hasThreshold ? sill + fw : sill;
   const innerTop = hasHead ? top - fw : top;
   if (wall.exterior) {
     const edge = wall.thickness + 0.029;
@@ -86,8 +87,8 @@ function frameOpening(parent, wall, opening, clip) {
   axisBox(parent, frame, wall, start, start + fw, innerBottom, innerTop, thickness);
   axisBox(parent, frame, wall, end - fw, end, innerBottom, innerTop, thickness);
   if (hasHead) axisBox(parent, frame, wall, start, end, innerTop, top, thickness);
+  if (hasThreshold) axisBox(parent, frame, wall, start, end, sill, innerBottom, thickness);
   if (clear) {
-    axisBox(parent, frame, wall, start, end, sill, innerBottom, thickness);
     if (width > 1.2) {
       const split = type === 'window' && wall.exterior && wall.position !== 0 ? 0.67 : 0.5;
       const middle = start + width * split;
@@ -104,6 +105,14 @@ function frameOpening(parent, wall, opening, clip) {
     }
     const glass = axisBox(parent, mats.window, wall, start + fw, end - fw, innerBottom, innerTop, 0.021);
     if (glass) glass.castShadow = false;
+  } else if (type === 'oak-door') {
+    const leafSpan = (width - fw * 2) / opening.leaves;
+    const gap = opening.leaves === 2 ? 0.003 : 0;
+    for (let i = 0; i < opening.leaves; i++) {
+      const left = start + fw + i * leafSpan + (i ? gap : 0);
+      const right = start + fw + (i + 1) * leafSpan - (i < opening.leaves - 1 ? gap : 0);
+      axisBox(parent, mats.oakDoor, wall, left, right, sill + 0.015, Math.min(top, sill + height - 0.015), 0.078);
+    }
   } else if (type === 'door' && sill === 0 && clip < 2) {
     // The cut view keeps the door swing and the passage readable.
     const alongX = wall.axis === 'x';
@@ -116,7 +125,7 @@ function frameOpening(parent, wall, opening, clip) {
 }
 
 function walls(parent, floor, cut) {
-  const slice = cut ? 0.95 : Infinity;
+  const slice = cut ? sliceHeight : Infinity;
   for (const wall of floor.walls) {
     const { start, end, height, openings, exterior } = wall;
     const ridge = height === 'gable' ? mainMid : height === 'cross' ? crossMid : null;

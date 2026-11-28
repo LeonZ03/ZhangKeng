@@ -13,6 +13,7 @@ export const mats = {
   window: new THREE.MeshStandardMaterial({ color: '#8bacb4', roughness: 0.2, metalness: 0.25, transparent: true, opacity: 0.46, depthWrite: false }),
   roof: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.63, side: THREE.DoubleSide }),
   roofEdge: standard('#292d34'), timber: standard('#9d7356'), wood: standard('#bc9368'), oak: standard('#96704e'),
+  oakDoor: standard('#482b1a', 0.48),
   tile: standard('#ddd1bc'), stone: standard('#bdb8a8'), bath: standard('#aeb9b4'),
   cloth: standard('#eee4d2'), linen: standard('#e6dcc8'), accent: standard('#93997d'),
   sofa: standard('#d5c5ab'), pillow: standard('#b48b65'), ceramic: standard('#f3eee0', 0.32),
