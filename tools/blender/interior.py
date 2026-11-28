@@ -1,6 +1,6 @@
 """Resolve the villa's plan furniture into editable, glTF-compatible assemblies."""
 
-from math import cos, pi, radians, sin, tau
+from math import ceil, cos, floor, pi, radians, sin, tau
 from pathlib import Path
 from random import Random
 
@@ -568,44 +568,89 @@ def low_cabinet(g, parent, item):
               (.112, .012, .014), .003)
 
 
+def slab_rectangles(outline):
+    """Decompose the orthogonal slab outline into non-overlapping rectangles."""
+    levels = sorted({z for _, z in outline})
+    edges = [(a[0], min(a[1], b[1]), max(a[1], b[1]))
+             for a, b in zip(outline, outline[1:] + outline[:1]) if a[0] == b[0]]
+    regions = []
+    for near, far in zip(levels, levels[1:]):
+        xs = sorted(x for x, z1, z2 in edges if z1 <= near and far <= z2)
+        regions.extend((left, near, right, far) for left, right in zip(xs[::2], xs[1::2]))
+    return regions
+
+
+def subtract_floor_region(regions, cut):
+    pieces = []
+    for x1, z1, x2, z2 in regions:
+        left, near = max(x1, cut[0]), max(z1, cut[1])
+        right, far = min(x2, cut[2]), min(z2, cut[3])
+        if left >= right or near >= far:
+            pieces.append((x1, z1, x2, z2))
+            continue
+        pieces.extend(rect for rect in ((x1, z1, left, z2), (right, z1, x2, z2),
+                                        (left, z1, right, near), (left, far, right, z2))
+                      if rect[2] > rect[0] and rect[3] > rect[1])
+    return pieces
+
+
+def floor_finish(g, parent, name, regions, tile, xstep, zstep, gap):
+    wood = tile == 'floorwood'
+    verts, faces, uv, underlay = [], [], [], []
+    rng = Random(842331)
+    offsets = {}
+    for x1, z1, x2, z2 in regions:
+        underlay.extend((x, -z, .013) for x, z in ((x1, z2), (x2, z2), (x2, z1), (x1, z1)))
+        for row in range(floor(z1 / zstep), ceil(z2 / zstep)):
+            near = max(z1, row * zstep + gap / 2)
+            far = min(z2, (row + 1) * zstep - gap / 2)
+            offset = (row % 3) * xstep / 3 if wood else 0
+            for col in range(floor((x1 - offset) / xstep), ceil((x2 - offset) / xstep)):
+                left = max(x1, col * xstep + offset + gap / 2)
+                right = min(x2, (col + 1) * xstep + offset - gap / 2)
+                if right <= left or far <= near:
+                    continue
+                corners = [(left, -far), (right, -far), (right, -near), (left, -near)]
+                faces.append(tuple(range(len(verts), len(verts) + 4)))
+                verts.extend((x, y, .0155) for x, y in corners)
+                if (row, col) not in offsets:
+                    offsets[row, col] = rng.random(), rng.random()
+                u, v = offsets[row, col]
+                uv.append([(u + y * 3.9, v + x * .50) if wood else
+                           (u + x * 1.5, v + y * 1.5) for x, y in corners])
+    grout = g.mesh(parent, name + ' · recessed joints', underlay,
+                   [tuple(range(i, i + 4)) for i in range(0, len(underlay), 4)],
+                   'woodbase' if wood else 'tilebase')
+    surface = g.mesh(parent, name + ' · finish', verts, faces, tile, uv=uv)
+    # The slab casts the structural shadow. Thin finish layers only receive it.
+    grout['castShadow'] = surface['castShadow'] = False
+
+
 def floor_finishes(g):
     for story, node in [('ground', 'GroundFloor'), ('upper', 'UpperFloor')]:
         parent = g.ctx.nodes[node]
+        for obj in list(parent.children):
+            if obj.get('source_name') == '地面占位':
+                bpy.data.objects.remove(obj, do_unlink=True)
         rooms = g.ctx.plan['floors'][story]['rooms']
+        tiled = slab_rectangles(g.ctx.plan['slabOutlines'][story])
+        # Continue the balcony finish where it sits on the stone fascia.
         for room in rooms:
-            x1, z1, x2, z2 = room['bounds']
-            wood = room['finish'] == 'wood'
-            bath = room['finish'] == 'bath'
-            # An unbroken 600 mm joint grid continues between the dining and living areas.
-            zstep = .182 if wood else .30 if bath else .60
-            xstep = 1.52 if wood else zstep
-            gap = .0025 if wood else .0035
-            tile = 'floorwood' if wood else 'bathfloor' if bath else 'limestone'
-            verts, faces, uv = [], [], []
-            rng = Random(842331)
-            r = int(z1 / zstep)
-            while r * zstep < z2 - .001:
-                top = max(z1, r * zstep) + gap / 2
-                bottom = min(z2, (r + 1) * zstep) - gap / 2
-                offset = (r % 3) * xstep / 3 if wood else 0
-                col = int((x1 - offset) // xstep)
-                while col * xstep + offset < x2 - .001:
-                    left = max(x1, col * xstep + offset) + gap / 2
-                    right = min(x2, (col + 1) * xstep + offset) - gap / 2
-                    if right > left and bottom > top:
-                        i = len(verts)
-                        corners = [(left, -bottom), (right, -bottom), (right, -top), (left, -top)]
-                        verts.extend((x, y, .0155) for x, y in corners)
-                        faces.append(tuple(range(i, i + 4)))
-                        u, v = rng.random(), rng.random()
-                        uv.append([(u + y * 3.9, v + x * .50) if wood else
-                                   (u + x * 1.5, v + y * 1.5) for x, y in corners])
-                    col += 1
-                r += 1
-            g.mesh(parent, room['name'] + ' · recessed joints', [
-                (x1, -z2, .013), (x2, -z2, .013), (x2, -z1, .013), (x1, -z1, .013)],
-                [(0, 1, 2, 3)], 'woodbase' if wood else 'tilebase')
-            g.mesh(parent, room['name'] + ' · finish', verts, faces, tile, uv=uv)
+            if room['finish'] == 'stone':
+                extension = [room['bounds']]
+                for region in tiled:
+                    extension = subtract_floor_region(extension, region)
+                tiled.extend(extension)
+        for room in rooms:
+            if room['finish'] == 'wood':
+                floor_finish(g, parent, room['name'], [room['bounds']], 'floorwood', 1.52, .182, .0025)
+            elif room['finish'] == 'bath':
+                floor_finish(g, parent, room['name'], [room['bounds']], 'bathfloor', .30, .30, .0035)
+            else:
+                continue
+            tiled = subtract_floor_region(tiled, room['bounds'])
+        # All remaining rooms, passages and thresholds share one 600 mm tile grid.
+        floor_finish(g, parent, 'Continuous limestone flooring', tiled, 'limestone', .60, .60, .0035)
 
 
 def refine(ctx):

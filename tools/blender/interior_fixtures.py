@@ -1,6 +1,6 @@
 """Kitchen joinery, sanitary fixtures, bedside pieces, and the living-room plant."""
 
-from math import cos, pi, sin
+from math import atan2, cos, hypot, pi, sin
 from random import Random
 
 from interior_geometry import rounded_outline
@@ -35,10 +35,11 @@ def faucet(g, node, x, y, z, height=.216, reach=.124):
                                            (x + .041, y, z + .106)], .007)
 
 
-def interactive_faucet(g, parent, x, y, z, height, reach, key, label, stream_length):
+def interactive_faucet(g, parent, x, y, z, height, reach, key, label, stream_length, *, rotation=0):
     # Pivot is the actual spout outlet; the faucet and its visible water stream
     # remain selectable as one authored fixture.
-    node = g.group(parent, label, (x, y - reach, z + height * .43))
+    outlet = (x + reach * sin(rotation), y - reach * cos(rotation), z + height * .43)
+    node = g.group(parent, label, outlet, rotation=rotation)
     node['exploreAction'] = 'water'
     node['exploreLabel'] = label
     node['exploreAmount'] = stream_length
@@ -110,12 +111,14 @@ def kitchen(g, parent):
     for y, d in [(-.18, .163), (-.664, .123)]:
         g.box(node, 'Worktop sink surround', 'quartz', (9.879, y, .917), (.607, d, .062), .006)
     basin_y, basin_top, basin_depth = -.442, .937, .144
-    tap_y, tap_z, tap_height = -.191, .948, .242
+    tap_x, tap_y, tap_z, tap_height = 9.879, -.191, .948, .242
     stream_length = tap_z + tap_height * .43 - (basin_top - basin_depth + .004)
-    for x, key, label in [(9.724, 'ExploreKitchenTap', '左槽水龙头'),
-                          (10.033, 'ExploreKitchenTapRight', '右槽水龙头')]:
+    for x in (9.724, 10.033):
         sink(g, node, 'Undermount stainless bowl', (x, basin_y, basin_top), .157, .192, basin_depth, 'sink')
-        interactive_faucet(g, node, x, tap_y, tap_z, tap_height, tap_y - basin_y, key, label, stream_length)
+    # The central mixer is aimed slightly toward the left bowl, clear of the divider.
+    dx, dy = -.10, tap_y - basin_y
+    interactive_faucet(g, node, tap_x, tap_y, tap_z, tap_height, hypot(dx, dy),
+                       'ExploreKitchenTap', '厨房水龙头', stream_length, rotation=atan2(dx, dy))
     g.box(node, 'Center sink divider', 'sink', (9.878, -.441, .943), (.026, .377, .012), .006)
     g.box(node, 'East cabinet base', 'cabinet', (11.388, -1.388, .492), (.564, 1.331, .815))
     g.box(node, 'East quartz return', 'quartz', (11.389, -1.386, .917), (.611, 1.321, .062), .006, grain='y')

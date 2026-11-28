@@ -11,7 +11,7 @@ registerHooks({
   },
 });
 
-const { buildModel } = await import('../../site/model.js');
+const { buildModel, slabOutlines } = await import('../../site/model.js');
 const { mats } = await import('../../site/geometry.js');
 const plan = await import('../../site/plan.js');
 const model = buildModel();
@@ -81,5 +81,5 @@ function serializeNode(object) {
 const scene = serializeNode(model.root);
 const out = resolve(process.argv[2] ?? fileURLToPath(new URL('../../.work/blender/geometry.json', import.meta.url)));
 await mkdir(dirname(out), { recursive: true });
-await writeFile(out, JSON.stringify({ schema: 1, plan, scene, materials, geometries }));
+await writeFile(out, JSON.stringify({ schema: 1, plan: { ...plan, slabOutlines }, scene, materials, geometries }));
 console.log(`Blender input: ${geometries.length} mesh definitions, ${Object.keys(materials).length} materials`);

@@ -238,7 +238,7 @@ def stones(scene, parent, mat, dark):
 
 def kitchen(scene, parent, stainless, bronze, rock):
     sink, tap, cabinet = MeshBuilder(), MeshBuilder(), MeshBuilder()
-    hob, burner, controls = MeshBuilder(), MeshBuilder(), MeshBuilder()
+    hob, burner = MeshBuilder(), MeshBuilder()
     x, y = -1.59, 5.77
     top = DATUM + 0.9925
     hob_x = -3.21
@@ -325,14 +325,13 @@ def kitchen(scene, parent, stainless, bronze, rock):
                      (opening_x1 - opening_x0, far - near, upper_height), bevel=0.002)
         core.object(scene, parent, "Outdoor kitchen sink clearance through cabinet core", core_material)
 
-    # The drawing's "单铜钱/双铜钱" labels describe stone-paving motifs, not
-    # appliance specifications. Treat the black square as a compact twin-hob
-    # design assumption; the source gives no fuel or appliance model, so omit
-    # flames and ignition hardware.
+    # The fixture is modeled as a twin hob with one control per burner.
     hob_center = (hob_x, y, top + 0.009)
     dark_glass = solid("Outdoor twin hob dark ceramic glass", (31, 33, 34), 0.24, 0.16)
     hob.box(hob_center, (0.61, 0.43, 0.018), bevel=0.014)
-    for burner_x in (hob_center[0] - 0.145, hob_center[0] + 0.145):
+    knob_distance = 0.172
+    for burner_x, side, label in ((hob_x - 0.145, "Left", "后院左灶旋钮"),
+                                  (hob_x + 0.145, "Right", "后院右灶旋钮")):
         # Two fine annular rings make the burner geometry legible without
         # creating dense appliance meshes.
         for radius, tube_radius, z in ((0.101, 0.010, top + 0.023),
@@ -353,11 +352,26 @@ def kitchen(scene, parent, stainless, bronze, rock):
             start = (burner_x + 0.047 * cos(angle), y + 0.047 * sin(angle), top + 0.034)
             end = (burner_x + 0.101 * cos(angle), y + 0.101 * sin(angle), top + 0.034)
             burner.branch(start, end, 0.004, 0.004, sides=5)
-    for knob_x in (hob_center[0] - 0.145, hob_center[0] + 0.145):
-        controls.branch((knob_x, y - 0.172, top + 0.019),
-                        (knob_x, y - 0.172, top + 0.043), 0.022, 0.019, sides=12)
-        controls.branch((knob_x, y - 0.191, top + 0.044),
-                        (knob_x, y - 0.207, top + 0.044), 0.004, 0.004, sides=5)
+        control = bpy.data.objects.new("ExploreOutdoorBurner" + side, None)
+        parent.users_collection[0].objects.link(control)
+        control.parent = parent
+        control.location = (burner_x, y - knob_distance, top + 0.019)
+        control["exploreAction"] = "burner"
+        control["exploreLabel"] = label
+        control["exploreAmount"] = 1.0
+        # The flame offset uses glTF's Y-up coordinates, with north along -Z.
+        control["exploreFlameOffset"] = [0.0, 0.011, -knob_distance]
+        control["exploreFlameRadius"] = 0.064
+        knob = MeshBuilder()
+        sides = 16
+        knob.branch((0, 0, 0), (0, 0, 0.024), 0.024, 0.021, sides=sides)
+        knob.face([(0.021 * cos(2 * pi * i / sides), 0.021 * sin(2 * pi * i / sides), 0.024)
+                   for i in range(sides)])
+        knob.box((0, 0, 0.025), (0.014, 0.032, 0.008), bevel=0.003)
+        knob.object(scene, control, "Outdoor hob knob", bronze)
+        mark = MeshBuilder()
+        mark.box((0, -0.010, 0.030), (0.004, 0.009, 0.002), bevel=0.0005)
+        mark.object(scene, control, "Outdoor hob position mark", stainless)
 
     # Thin steel flange plus sloped walls and a low basin floor read as a
     # genuine open inset. The floor closes the opening, so the counter cannot
@@ -390,28 +404,41 @@ def kitchen(scene, parent, stainless, bronze, rock):
                    (drain_x + 0.022 * cos(b), drain_y + 0.022 * sin(b), floor_z + 0.003),
                    (drain_x + 0.022 * cos(a), drain_y + 0.022 * sin(a), floor_z + 0.003)])
 
-    # A compact satin mixer behind the basin, with a forward-facing outlet.
-    tap.branch((x + 0.11, y + 0.162, top + 0.011),
-               (x + 0.11, y + 0.162, top + 0.035), 0.027, 0.022, sides=10)
-    tap.branch((x + 0.11, y + 0.162, top + 0.033),
-               (x + 0.11, y + 0.162, top + 0.220), 0.011, 0.011, sides=9)
-    tap.branch((x + 0.11, y + 0.162, top + 0.220),
-               (x + 0.11, y + 0.115, top + 0.263), 0.011, 0.011, sides=9)
-    tap.branch((x + 0.11, y + 0.115, top + 0.263),
-               (x + 0.11, y - 0.035, top + 0.263), 0.011, 0.009, sides=9)
-    tap.branch((x + 0.11, y - 0.035, top + 0.263),
-               (x + 0.11, y - 0.055, top + 0.242), 0.009, 0.009, sides=9)
-    tap.branch((x + 0.11, y + 0.162, top + 0.052),
-               (x + 0.155, y + 0.162, top + 0.073), 0.008, 0.006, sides=7)
+    # Center the mounting foot on the stone deck behind the steel rim. The
+    # spout turns downward over the center of the bowl.
+    tap_y = y + rim_d / 2 + 0.040
+    sides = 16
+    tap.branch((x, tap_y, top), (x, tap_y, top + 0.018), 0.027, 0.025, sides=sides)
+    tap.face([(x + 0.025 * cos(2 * pi * i / sides), tap_y + 0.025 * sin(2 * pi * i / sides), top + 0.018)
+              for i in range(sides)])
+    radius = (tap_y - y) / 2
+    arch = [(tap_y, top + 0.016, 0)]
+    for i in range(17):
+        angle = pi * i / 16
+        arch.append((tap_y - radius * (1 - cos(angle)), top + 0.172 + 0.094 * sin(angle), angle))
+    arch.append((y, top + 0.149, pi))
+    points = []
+    for cy, cz, angle in arch:
+        for i in range(sides):
+            phase = 2 * pi * i / sides
+            points.append((x + 0.012 * cos(phase), cy + 0.012 * sin(phase) * cos(angle),
+                           cz + 0.012 * sin(phase) * sin(angle)))
+    tap.patch(points, [(row * sides + i, row * sides + (i + 1) % sides,
+                        (row + 1) * sides + (i + 1) % sides, (row + 1) * sides + i)
+                       for row in range(len(arch) - 1) for i in range(sides)], smooth=True)
+    tap.branch((x, y, top + 0.155), (x, y, top + 0.138), 0.0135, 0.0135, sides=sides)
+    tap.branch((x + 0.010, tap_y, top + 0.059),
+               (x + 0.046, tap_y, top + 0.078), 0.008, 0.006, sides=10)
+    pulls = MeshBuilder()
     for i in range(5):
         xx = -3.49 + i * 0.565
         cabinet.box((xx, 5.477, DATUM + 0.51), (0.546, 0.028, 0.67), bevel=0.005)
-        tap.box((xx, 5.454, DATUM + 0.733), (0.141, 0.022, 0.019), bevel=0.004)
+        pulls.box((xx, 5.454, DATUM + 0.733), (0.141, 0.022, 0.019), bevel=0.004)
     hob.object(scene, parent, "Outdoor twin burner hob glass", dark_glass)
     burner.object(scene, parent, "Outdoor twin burner rings and pan supports", bronze)
-    controls.object(scene, parent, "Outdoor hob control knobs", bronze)
     sink.object(scene, parent, "Outdoor recessed open stainless sink and drain", stainless)
-    tap.object(scene, parent, "Outdoor faucet and cabinet hardware", bronze)
+    tap.object(scene, parent, "Outdoor deck-mounted gooseneck mixer", bronze)
+    pulls.object(scene, parent, "Outdoor kitchen cabinet pulls", bronze)
     cabinet.object(scene, parent, "Outdoor kitchen base fronts", rock)
 
 

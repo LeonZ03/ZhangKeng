@@ -17,6 +17,11 @@ const groundOutline = [
 const balconyEdge = 10;
 const balconyFasciaDepth = 0.23;
 const balconyFasciaBack = balconyEdge - balconyFasciaDepth;
+export const slabOutlines = {
+  ground: groundOutline,
+  upper: [[-0.1, -0.1], [11.9, -0.1], [11.9, 9.1], [8.4, 9.1], [8.4, balconyFasciaBack],
+    [3.4, balconyFasciaBack], [3.4, 9.1], [-0.1, 9.1]],
+};
 
 function axisBox(parent, material, wall, begin, end, low, high, depth, offset = 0) {
   if (end - begin < 0.002 || high - low < 0.002) return;
@@ -265,14 +270,11 @@ function stairs(parent) {
 }
 
 function floorSlabs(parent, id) {
-  const shape = id === 'ground'
-    ? groundOutline
-    : [[-0.1, -0.1], [11.9, -0.1], [11.9, 9.1], [8.4, 9.1], [8.4, balconyFasciaBack],
-      [3.4, balconyFasciaBack], [3.4, 9.1], [-0.1, 9.1]];
-  plate(parent, mats.tile, shape, 0, id === 'ground' ? 0.18 : 0.22);
+  plate(parent, mats.tile, slabOutlines[id], 0, id === 'ground' ? 0.18 : 0.22);
   for (const room of floors[id].rooms) {
     const [x1, z1, x2, z2] = room.bounds;
-    box(parent, mats[room.finish], (x1 + x2) / 2, 0.006, (z1 + z2) / 2, x2 - x1, 0.012, z2 - z1);
+    const finish = box(parent, mats[room.finish], (x1 + x2) / 2, 0.006, (z1 + z2) / 2, x2 - x1, 0.012, z2 - z1);
+    finish.name = '地面占位';
   }
   if (id === 'ground') {
     box(parent, mats.slatePaving, 5.9, -0.105, 8.9, 5.0, 0.17, 2.2);
